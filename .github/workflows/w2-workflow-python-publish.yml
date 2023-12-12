@@ -129,7 +129,7 @@ jobs:
           THIS_VERSION="${{ inputs.version }}"
         fi
         rm -rf PKNSETools/__init__.py
-        echo VERSION=\'`echo ${THIS_VERSION}`\' >> PKNSETools/__init__.py
+        echo __version__=\'`echo ${THIS_VERSION}`\' >> PKNSETools/__init__.py
         echo "##[set-output name=THIS_VERSION;]$(echo ${THIS_VERSION})"
         echo "##[set-output name=CURRENT_VERSION;]$(echo ${CURRENT_VERSION})"
        
@@ -144,7 +144,7 @@ jobs:
         rmdir /s /q build
         rmdir /s /q dist
         # del /s /q PKNSETools/__init__.py
-        # echo VERSION='${{ steps.vars.outputs.THIS_VERSION }}' >> PKNSETools/__init__.py
+        # echo __version__='${{ steps.vars.outputs.THIS_VERSION }}' >> PKNSETools/__init__.py
         python3 setup.py clean build sdist bdist_wheel
         twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/*
     - name: Publish distribution 📦 to PyPI
@@ -159,6 +159,6 @@ jobs:
         rmdir /s /q build
         rmdir /s /q dist
         # del /s /q PKNSETools/__init__.py
-        # echo VERSION='${{ steps.vars.outputs.THIS_VERSION }}' >> PKNSETools/__init__.py
+        # echo __version__='${{ steps.vars.outputs.THIS_VERSION }}' >> PKNSETools/__init__.py
         python3 setup.py clean build sdist bdist_wheel
         twine upload --verbose dist/*
