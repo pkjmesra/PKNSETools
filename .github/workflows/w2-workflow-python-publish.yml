@@ -149,7 +149,7 @@ jobs:
         twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/*
     - name: Publish distribution 📦 to PyPI
     
-      if: startsWith(github.ref, 'refs/tags') || ${{ needs.check_should_run.outputs.should_run != 'false' }}
+      if: ${{ needs.check_should_run.outputs.should_run != 'false' }}
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
