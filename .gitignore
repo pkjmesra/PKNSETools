@@ -5,3 +5,4 @@ dist
 __pycache__
 PKNSETools/morningstartool/__pycache__
 *.egg-info
+.DS_Store

@@ -1,0 +1,163 @@
+# """
+#     The MIT License (MIT)
+
+#     Copyright (c) 2023 pkjmesra
+
+#     Permission is hereby granted, free of charge, to any person obtaining a copy
+#     of this software and associated documentation files (the "Software"), to deal
+#     in the Software without restriction, including without limitation the rights
+#     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#     copies of the Software, and to permit persons to whom the Software is
+#     furnished to do so, subject to the following conditions:
+
+#     The above copyright notice and this permission notice shall be included in all
+#     copies or substantial portions of the Software.
+
+#     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#     AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#     SOFTWARE.
+
+# """
+# This workflows will upload a Python Package using Twine when a commit is pushed
+# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
+
+name: 2. PyPi Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'PyPi Publish'
+        required: false
+        default: 'PyPi Publish'
+
+      branch-name:
+        description: 'branch-name'
+        required: true
+        type: string
+        default: 'main'
+        
+      version:
+        description: 'Release version'
+        required: true
+        type: string
+        default: 'x.y.z'
+
+  # schedule:
+  #   - cron: '30 7 * * 6'
+  workflow_call:
+    inputs:
+      branch-name:
+        required: true
+        type: string
+        default: 'main'
+      version:
+        required: true
+        type: string
+        default: 'x.y.z'
+
+jobs:
+  check_should_run:
+      runs-on: windows-latest
+      name: Check latest commit
+      outputs:
+        should_run: ${{ steps.should_run.outputs.should_run }}
+      steps:
+        - uses: actions/checkout@v2
+          with:
+            ref: main
+        - name: print latest_commit
+          run: echo ${{ github.sha }}
+
+        - id: should_run
+          continue-on-error: true
+          name: check latest commit is less than a week
+          if: ${{ github.event_name == 'workflow_call' }} || ${{ github.event_name == 'workflow_dispatch' }}
+          run: test -z $(git rev-list  --after="7 days"  ${{ github.sha }}) && echo "::set-output name=should_run::false"
+
+  deploy:
+
+    runs-on: windows-latest
+    needs: check_should_run
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{ inputs.branch-name }}
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+
+    - name: Restore Dependencies from Cache
+      uses: actions/cache@v2
+      with:
+        path: ~\AppData\Local\pip\Cache
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install Python Dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Install setuptools
+      run: |
+        pip install setuptools wheel twine
+    
+    - name: Declare env variables
+      id: vars
+      shell: bash
+      run: |
+        GITHUB_REF=${GITHUB_REF#refs/tags/}
+        echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+        CURRENT_VERSION=`grep -o "'.*'" PKNSETools/__init__.py | sed "s/'//g"`
+        VERSION_ARR=(${CURRENT_VERSION//./ })
+        MAJOR_MINOR=${VERSION_ARR[0]}.${VERSION_ARR[1]}
+        TODAY=`date +%Y%m%d`
+        THIS_VERSION=${MAJOR_MINOR}.${TODAY}.${{github.run_number}}
+        echo ${THIS_VERSION}
+        if [ "${{ inputs.version }}" == "x.y.z" ]; then
+          echo "default version x.y.z cannot be used"
+        else
+          THIS_VERSION="${{ inputs.version }}"
+        fi
+        rm -rf PKNSETools/__init__.py
+        echo VERSION=\'`echo ${THIS_VERSION}`\' >> PKNSETools/__init__.py
+        echo "##[set-output name=THIS_VERSION;]$(echo ${THIS_VERSION})"
+        echo "##[set-output name=CURRENT_VERSION;]$(echo ${CURRENT_VERSION})"
+       
+    - name: Build and publish distribution 📦 to Test PyPI
+      if: ${{ needs.check_should_run.outputs.should_run != 'false' }}
+      env:
+        TWINE_USERNAME: ${{ secrets.TESTPYPI_USERNAME }}
+        TWINE_PASSWORD: ${{ secrets.TESTPYPI_PASSWORD }}
+        repository_url: https://test.pypi.org/legacy/
+      shell: cmd
+      run: |
+        rmdir /s /q build
+        rmdir /s /q dist
+        # del /s /q PKNSETools/__init__.py
+        # echo VERSION='${{ steps.vars.outputs.THIS_VERSION }}' >> PKNSETools/__init__.py
+        python3 setup.py clean build sdist bdist_wheel
+        twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/*
+    - name: Publish distribution 📦 to PyPI
+    
+      if: startsWith(github.ref, 'refs/tags') || ${{ needs.check_should_run.outputs.should_run != 'false' }}
+      env:
+        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        repository_url: https://upload.pypi.org/legacy/
+      shell: cmd
+      run: |
+        rmdir /s /q build
+        rmdir /s /q dist
+        # del /s /q PKNSETools/__init__.py
+        # echo VERSION='${{ steps.vars.outputs.THIS_VERSION }}' >> PKNSETools/__init__.py
+        python3 setup.py clean build sdist bdist_wheel
+        twine upload --verbose dist/*
