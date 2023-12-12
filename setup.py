@@ -80,10 +80,10 @@ setup(
 	zip_safe=False,
 	# entry_points='''
 	# [console_scripts]
-	# pkscreener=pkscreener.pkscreenercli:pkscreenercli
-	# pkbot=pkscreener.pkscreenerbot:main
+	# PKNSETools=PKNSETools.PKNSEToolscli:PKNSEToolscli
+	# pkbot=PKNSETools.PKNSEToolsbot:main
 	# ''',
-	download_url = 'https://github.com/'+__USERNAME__+'/pkscreener/archive/v' + VERSION + '.zip',
+	download_url = 'https://github.com/'+__USERNAME__+'/PKNSETools/archive/v' + VERSION + '.zip',
 	classifiers=[
 	"License :: OSI Approved :: MIT License",
 	"Operating System :: Microsoft :: Windows",
