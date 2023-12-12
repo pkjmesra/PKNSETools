@@ -103,11 +103,12 @@ jobs:
 
     - name: Install Python Dependencies
       run: |
-        pip install -r requirements.txt
+        pip3 install -r requirements.txt
 
     - name: Install setuptools
       run: |
-        pip install setuptools wheel twine
+        pip3 install setuptools wheel twine
+        pip3 install .
     
     - name: Declare env variables
       id: vars
