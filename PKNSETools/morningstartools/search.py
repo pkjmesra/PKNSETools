@@ -22,14 +22,16 @@
     SOFTWARE.
 
 """
-import requests
 import json
-from bs4 import BeautifulSoup
 import re
 
-from .utils import random_user_agent
-from .utils import ASSET_TYPE, EXCHANGE, FIELDS, FILTER_FUND, FILTER_STOCK, SITE
+import requests
+from bs4 import BeautifulSoup
+
 from .error import not_200_response
+from .utils import (ASSET_TYPE, EXCHANGE, FIELDS, FILTER_FUND, FILTER_STOCK,
+                    SITE, random_user_agent)
+
 
 def filter_universe(field = FILTER_FUND, proxies = {}):
   """

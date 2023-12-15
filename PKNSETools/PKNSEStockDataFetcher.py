@@ -6,9 +6,8 @@ from io import StringIO
 warnings.simplefilter("ignore", DeprecationWarning)
 warnings.simplefilter("ignore", FutureWarning)
 import pandas as pd
-
-from PKDevTools.classes.Fetcher import fetcher
 from PKDevTools.classes.ColorText import colorText
+from PKDevTools.classes.Fetcher import fetcher
 from PKDevTools.classes.log import default_logger
 
 # This Class Handles Fetching of Stock Data over the internet from NSE/BSE

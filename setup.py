@@ -33,8 +33,10 @@ python setup.py clean build install sdist bdist_wheel
 """
 # import atexit, os
 import sys
-import setuptools  # noqa
 from distutils.core import setup
+
+import setuptools  # noqa
+
 from PKNSETools import __version__ as VERSION
 
 __USERNAME__ = 'pkjmesra'

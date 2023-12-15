@@ -22,19 +22,18 @@
     SOFTWARE.
 
 """
-from bs4 import BeautifulSoup
 import datetime
 import json
-import pandas as pd
 import re
+
+import pandas as pd
 import requests
+from bs4 import BeautifulSoup
 
 from .error import no_site_error, not_200_response
 from .search import search_funds, token_investment_strategy
-from .utils import random_user_agent
-
 from .security import Security
-
+from .utils import random_user_agent
 
 
 class Funds(Security):

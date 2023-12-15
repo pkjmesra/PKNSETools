@@ -24,7 +24,6 @@
 """
 import random
 
-
 APIKEY = 'lstzFDEOhfFNMLikKa0am9mgEKLBl49T'
 
 ASSET_TYPE = ['etf', 'fund', 'stock']

@@ -23,12 +23,14 @@
     SOFTWARE.
 
 """
+import csv
 import os
+
 import pandas as pd
 import requests
-import csv
 
-from PKNSETools.PKConstants import _headers, _daily_report_url_path, _base_domain
+from PKNSETools.PKConstants import (_base_domain, _daily_report_url_path,
+                                    _headers)
 
 session = requests.session()
 

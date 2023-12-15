@@ -23,10 +23,13 @@
     SOFTWARE.
 
 """
-import requests
 import json
 from collections import namedtuple
-from PKNSETools.PKConstants import _head, _base_domain, _autoComplete_url_path, _quote_url_path
+
+import requests
+
+from PKNSETools.PKConstants import (_autoComplete_url_path, _base_domain,
+                                    _head, _quote_url_path)
 
 session = requests.session()
 

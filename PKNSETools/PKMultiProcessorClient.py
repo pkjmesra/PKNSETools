@@ -24,10 +24,10 @@
 
 """
 
-import multiprocessing
 import logging
-import sys
+import multiprocessing
 import os
+import sys
 from queue import Empty
 
 # usage: PKNSEToolscli.exe [-h] [-a ANSWERDEFAULT] [-c CRONINTERVAL] [-d] [-e] [-o OPTIONS] [-p] [-t] [-l] [-v]

@@ -25,12 +25,12 @@
 import datetime
 import json
 import re
+
 import requests
 
 from .error import not_200_response
 from .search import search_funds, search_stock, token_chart
 from .utils import APIKEY, SITE, random_user_agent
-
 
 #with Universe field, we can detect the asset class
 #done find all stock echange and create a search_equity method

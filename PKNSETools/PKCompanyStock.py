@@ -23,12 +23,19 @@
     SOFTWARE.
 
 """
-from io import StringIO
 import json
-import requests
+from datetime import datetime, timedelta
+from io import StringIO
+
 import pandas as pd
-from  datetime import datetime , timedelta
-from PKNSETools.PKConstants import _head, _headers, _base_domain, _quote_url_path_html, _historical_company_data_url_path_html, _historical_company_data_url_path, _historical_index_data_url_path
+import requests
+
+from PKNSETools.PKConstants import (_base_domain, _head, _headers,
+                                    _historical_company_data_url_path,
+                                    _historical_company_data_url_path_html,
+                                    _historical_index_data_url_path,
+                                    _quote_url_path_html)
+
 session = requests.session()
 
 def get_Company_History_Data(company, from_date=(datetime.today().strftime("%d-%m-%Y")), to_date=(datetime(datetime.today().year - 1, datetime.today().month,datetime.today().day).strftime("%d-%m-%Y"))):

@@ -1,15 +1,16 @@
 
-from bs4 import BeautifulSoup
-import requests
 import urllib
 import warnings
 from io import StringIO
 
+import requests
+from bs4 import BeautifulSoup
+
 warnings.simplefilter("ignore", DeprecationWarning)
 warnings.simplefilter("ignore", FutureWarning)
 import pandas as pd
-from PKDevTools.classes.Fetcher import fetcher
 from PKDevTools.classes.ColorText import colorText
+from PKDevTools.classes.Fetcher import fetcher
 from PKDevTools.classes.log import default_logger
 
 # This Class Handles Fetching of Stock Data over the internet from NSE/BSE

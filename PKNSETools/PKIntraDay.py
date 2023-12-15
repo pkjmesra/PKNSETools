@@ -24,9 +24,16 @@
 
 """
 from datetime import datetime
-import requests
+
 import pandas as pd
-from PKNSETools.PKConstants import _head, _base_domain, _quote_url_path_html, _chart_data_preopen_url, _chart_data_open_url,_chart_data_index_preopen_url,_chart_data_index_open_url
+import requests
+
+from PKNSETools.PKConstants import (_base_domain, _chart_data_index_open_url,
+                                    _chart_data_index_preopen_url,
+                                    _chart_data_open_url,
+                                    _chart_data_preopen_url, _head,
+                                    _quote_url_path_html)
+
 
 class Intra_Day:
     baseNumber = None
