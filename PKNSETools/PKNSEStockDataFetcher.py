@@ -151,7 +151,8 @@ class nseStockDataFetcher(fetcher):
         return listStockCodes
 
     def holidayList(self, exchange="NSE"):
-        url = "https://www.nseindia.com/api/holiday-master?type=trading"
+        url = "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/.github/dependencies/nse-holidays.json"
+        #  "https://www.nseindia.com/api/holiday-master?type=trading"
         headers = {"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36"}
         res = self.fetchURL(url,headers=headers)
         if res is None or res.status_code != 200:
