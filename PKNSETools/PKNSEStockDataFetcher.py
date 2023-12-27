@@ -1,4 +1,30 @@
+"""
+    The MIT License (MIT)
+
+    Copyright (c) 2023 pkjmesra
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+"""
 import csv
+import datetime
+import pytz
 import random
 import warnings
 from io import StringIO
@@ -13,7 +39,7 @@ from PKDevTools.classes.log import default_logger
 # This Class Handles Fetching of Stock Data over the internet from NSE/BSE
 
 class nseStockDataFetcher(fetcher):
-                
+
     def fetchNiftyCodes(self, tickerOption):
         listStockCodes = []
         if tickerOption == 12:
@@ -123,3 +149,45 @@ class nseStockDataFetcher(fetcher):
                 )
 
         return listStockCodes
+
+    def holidayList(self, exchange="NSE"):
+        url = "https://www.nseindia.com/api/holiday-master?type=trading"
+        headers = {"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36"}
+        res = self.fetchURL(url,headers=headers)
+        if res is None or res.status_code != 200:
+            return None
+        try:
+            cm = res.json()['CM'] # CM = Capital Markets
+            df = pd.DataFrame(cm)
+            df = df[['tradingDate', 'weekDay', 'description']]
+            df.loc[:, 'description'] = df.loc[:, 'description'].apply(
+                    lambda x: x.replace('\r','')
+                )
+            return df
+        except Exception as e:
+            default_logger().debug(e, exc_info=True)
+            return None
+    
+    def currentDateTime(simulate=False, day=None, hour=None, minute=None):
+        curr = datetime.datetime.now(pytz.timezone("Asia/Kolkata"))
+        if simulate:
+            return curr.replace(day=day, hour=hour, minute=minute)
+        else:
+            return curr
+    
+    def isTodayHoliday(self,exchange="NSE",today=None):
+        """
+        today must be in "%d-%b-%Y" format
+        """
+        holidays = self.holidayList()
+        if holidays is None:
+            return False, None
+        
+        if today is None:
+            today = self.currentDateTime().strftime("%d-%b-%Y")
+        occasion = None
+        for holiday in holidays['tradingDate']:
+            if today in holiday:
+                occasion = holidays[holidays['tradingDate']==holiday]['description'].iloc[0]
+                break
+        return occasion is not None, occasion
