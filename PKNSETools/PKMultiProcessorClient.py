@@ -42,8 +42,6 @@ try:
         import multiprocessing.popen_fork as forking
 except ImportError:
     print('Contact developer! Your platform does not support multiprocessing!')
-    input('Press any key to exit...')
-    sys.exit(0)
 
 class PKMultiProcessorClient(multiprocessing.Process):
 

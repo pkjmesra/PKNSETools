@@ -142,9 +142,9 @@ class nseStockDataFetcher(fetcher):
                     )
 
             else:
-                input(
+                print(
                     colorText.FAIL
-                    + "=> Error getting stock codes from NSE! Press <Enter> to exit!"
+                    + "=> Error getting stock codes from NSE!"
                     + colorText.END
                 )
 
