@@ -32,9 +32,12 @@ from io import StringIO
 warnings.simplefilter("ignore", DeprecationWarning)
 warnings.simplefilter("ignore", FutureWarning)
 import pandas as pd
+from PKDevTools.classes import Archiver
 from PKDevTools.classes.ColorText import colorText
 from PKDevTools.classes.Fetcher import fetcher
 from PKDevTools.classes.log import default_logger
+
+from PKNSETools.Benny.NSE import NSE
 
 # This Class Handles Fetching of Stock Data over the internet from NSE/BSE
 
@@ -150,15 +153,24 @@ class nseStockDataFetcher(fetcher):
 
         return listStockCodes
 
-    def holidayList(self, exchange="NSE"):
+    def savedholidaysRaw(self, exchange="NSE"):
         url = "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/.github/dependencies/nse-holidays.json"
-        #  "https://www.nseindia.com/api/holiday-master?type=trading"
         headers = {"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36"}
         res = self.fetchURL(url,headers=headers)
         if res is None or res.status_code != 200:
-            return None
+            return [], []
         try:
             cm = res.json()['CM'] # CM = Capital Markets
+            lastYear = int(datetime.datetime.today().year) - 1
+            cm_lastyear = res.json()[f'CM{lastYear}']
+            return cm, cm_lastyear
+        except Exception as e:
+            default_logger().debug(e, exc_info=True)
+            return [], []
+        
+    def holidayList(self, exchange="NSE"):
+        try:
+            cm = self.savedholidaysRaw()[0]
             df = pd.DataFrame(cm)
             df = df[['tradingDate', 'weekDay', 'description']]
             df.loc[:, 'description'] = df.loc[:, 'description'].apply(
@@ -192,3 +204,27 @@ class nseStockDataFetcher(fetcher):
                 occasion = holidays[holidays['tradingDate']==holiday]['description'].iloc[0]
                 break
         return occasion is not None, occasion
+
+    def updatedHolidays(self):
+        nse  = NSE(Archiver.get_user_outputs_dir())
+        holidays = nse.holidays()["CM"]
+        cm_lastyear = self.savedholidaysRaw()[1]
+        holidays.extend(cm_lastyear)
+        return holidays
+
+    def capitalMarketStatus(self):
+        nse  = NSE(Archiver.get_user_outputs_dir())
+        status = nse.status()
+        marketStatusShort = "Closed"
+        marketStatusLong = f"Market:{marketStatusShort}"
+        if len(status) > 0:
+            for market in status:
+                if market["market"] == "Capital Market":
+                    marketStatusShort = market["marketStatus"]
+                    change = int(round(market["variation"],0))
+                    pctChange = round(market["percentChange"],2)
+                    change = ((colorText.GREEN +"↑")if change >=0 else colorText.FAIL+"↓") + str(change) + colorText.END
+                    pctChange = (colorText.GREEN if pctChange >=0 else colorText.FAIL) + str(pctChange) + colorText.END
+                    marketStatusLong = f'{market["index"]} | {marketStatusShort} | {market["tradeDate"]} | {market["last"]} | {change} ({pctChange}%)'
+                    break
+        return marketStatusShort, marketStatusLong

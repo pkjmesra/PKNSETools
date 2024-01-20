@@ -22,11 +22,4 @@
     SOFTWARE.
 
 """
-from .PKAllStocks import *
-from .PKCompanyGeneral import *
-from .PKCompanyStock import *
-from .PKConstants import *
-from .PKIntraDay import *
-from .Benny.NSE import *
-
-__version__='0.1'
+from .NSE import NSE
