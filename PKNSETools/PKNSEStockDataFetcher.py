@@ -163,7 +163,7 @@ class nseStockDataFetcher(fetcher):
             cm = res.json()['CM'] # CM = Capital Markets
             lastYear = int(datetime.datetime.today().year) - 1
             cm_lastyear = res.json()[f'CM{lastYear}']
-            return cm, cm_lastyear
+            return cm, cm_lastyear, res.json()
         except Exception as e:
             default_logger().debug(e, exc_info=True)
             return [], []
@@ -207,10 +207,12 @@ class nseStockDataFetcher(fetcher):
 
     def updatedHolidays(self):
         nse  = NSE(Archiver.get_user_outputs_dir())
-        holidays = nse.holidays()["CM"]
-        cm_lastyear = self.savedholidaysRaw()[1]
-        holidays.extend(cm_lastyear)
-        return holidays
+        holidays = nse.holidays()
+        cm_holidays = holidays["CM"]
+        cm,cm_lastyear,raw = self.savedholidaysRaw()
+        cm_holidays.extend(cm_lastyear)
+        raw["CM"] = cm_holidays
+        return cm_holidays, raw
 
     def capitalMarketStatus(self):
         nse  = NSE(Archiver.get_user_outputs_dir())
