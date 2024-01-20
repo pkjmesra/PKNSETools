@@ -215,8 +215,8 @@ class nseStockDataFetcher(fetcher):
     def capitalMarketStatus(self):
         nse  = NSE(Archiver.get_user_outputs_dir())
         status = nse.status()
-        marketStatusShort = "Closed"
-        marketStatusLong = f"Market:{marketStatusShort}"
+        marketStatusShort = None
+        marketStatusLong = None
         if len(status) > 0:
             for market in status:
                 if market["market"] == "Capital Market":
