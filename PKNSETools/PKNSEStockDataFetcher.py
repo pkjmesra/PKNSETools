@@ -34,6 +34,7 @@ warnings.simplefilter("ignore", FutureWarning)
 import pandas as pd
 from PKDevTools.classes import Archiver
 from PKDevTools.classes.ColorText import colorText
+from PKDevTools.classes.PKDateUtilities import PKDateUtilities
 from PKDevTools.classes.Fetcher import fetcher
 from PKDevTools.classes.log import default_logger
 
@@ -219,9 +220,11 @@ class nseStockDataFetcher(fetcher):
         status = nse.status()
         marketStatusShort = None
         marketStatusLong = None
+        tradeDate = None
         if len(status) > 0:
             for market in status:
                 if market["market"] == "Capital Market":
+                    tradeDate = PKDateUtilities.dateFromdbYString(market["tradeDate"].split(" ")[0]).strftime("%Y-%m-%d")
                     marketStatusShort = market["marketStatus"]
                     change = int(round(market["variation"],0))
                     pctChange = round(market["percentChange"],2)
@@ -229,4 +232,4 @@ class nseStockDataFetcher(fetcher):
                     pctChange = (colorText.GREEN if pctChange >=0 else colorText.FAIL) + str(pctChange) + colorText.END
                     marketStatusLong = f'{market["index"]} | {marketStatusShort} | {market["tradeDate"]} | {market["last"]} | {change} ({pctChange}%)'
                     break
-        return marketStatusShort, marketStatusLong
+        return marketStatusShort, marketStatusLong,tradeDate
