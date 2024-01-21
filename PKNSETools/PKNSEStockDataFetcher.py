@@ -182,13 +182,6 @@ class nseStockDataFetcher(fetcher):
             default_logger().debug(e, exc_info=True)
             return None
     
-    def currentDateTime(simulate=False, day=None, hour=None, minute=None):
-        curr = datetime.datetime.now(pytz.timezone("Asia/Kolkata"))
-        if simulate:
-            return curr.replace(day=day, hour=hour, minute=minute)
-        else:
-            return curr
-    
     def isTodayHoliday(self,exchange="NSE",today=None):
         """
         today must be in "%d-%b-%Y" format
@@ -198,7 +191,7 @@ class nseStockDataFetcher(fetcher):
             return False, None
         
         if today is None:
-            today = self.currentDateTime().strftime("%d-%b-%Y")
+            today = PKDateUtilities.currentDateTime().strftime("%d-%b-%Y")
         occasion = None
         for holiday in holidays['tradingDate']:
             if today in holiday:
