@@ -26,3 +26,4 @@ from .funds import Funds
 from .search import (filter_universe, search_field, search_filter,
                      search_funds, search_stock)
 from .stock import Stock
+from .security import Security

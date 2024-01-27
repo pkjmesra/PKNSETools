@@ -22,6 +22,8 @@
     SOFTWARE.
 
 """
+# import PKNSETools.morningstartools
+# __package__ = 'PKNSETools.morningstartools'
 from .security import Security
 
 
@@ -568,3 +570,39 @@ class Stock(Security):
     
         """
         return self.GetData("valuation", url_suffixe='')
+
+# stockName = "idea"
+# import pandas as pd
+# R = Stock(stockName, exchange="INDIA").mutualFundSellers(top=50)
+# d = pd.DataFrame(R["rows"])
+# d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
+# print(f"mutualFundSellers:\n{d}")
+# R = Stock(stockName, exchange="INDIA").mutualFundOwnership(top=50)
+# d = pd.DataFrame(R["rows"])
+# d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
+# print(f"mutualFundOwnership:\n{d}")
+# R = Stock(stockName, exchange="INDIA").mutualFundConcentratedOwners(top=50)
+# d = pd.DataFrame(R["rows"])
+# d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
+# print(f"mutualFundConcentratedOwners:\n{d}")
+# R = Stock(stockName, exchange="INDIA").mutualFundBuyers(top=50)
+# d = pd.DataFrame(R["rows"])
+# d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
+# print(f"mutualFundBuyers:\n{d}")
+
+# R = Stock(stockName, exchange="INDIA").institutionSellers(top=50)
+# d = pd.DataFrame(R["rows"])
+# d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
+# print(f"institutionSellers:\n{d}")
+# R = Stock(stockName, exchange="INDIA").institutionOwnership(top=50)
+# d = pd.DataFrame(R["rows"])
+# d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
+# print(f"institutionOwnership:\n{d}")
+# R = Stock(stockName, exchange="INDIA").institutionConcentratedOwners(top=50)
+# d = pd.DataFrame(R["rows"])
+# d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
+# print(f"institutionConcentratedOwners:\n{d}")
+# R = Stock(stockName, exchange="INDIA").institutionBuyers(top=50)
+# d = pd.DataFrame(R["rows"])
+# d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
+# print(f"institutionBuyers:\n{d}")

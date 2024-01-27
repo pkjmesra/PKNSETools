@@ -32,20 +32,25 @@ class morningstarDataFetcher(fetcher):
             output.loc[:, "name"] = output.loc[:, "name"].apply(
                         lambda x: " ".join(x.split(" ")[:6]).replace("Ordinary Shares","").replace("Shs Dematerialised","")
                     )
+            output["marketCap"] = output["marketCap"].astype(str)
             output.loc[:, "marketCap"] = output.loc[:, "marketCap"].apply(
                         lambda x: colorText.FAIL + str("{:.2f}".format(x/10000000)).replace("nan","-")+ colorText.END
                     )
+            output["dividendYield"] = output["dividendYield"].astype(str)
             output.loc[:, "dividendYield"] = output.loc[:, "dividendYield"].apply(
                         lambda x: colorText.GREEN + str("{:.2f}".format(x))+ colorText.END
                     )
+            output["closePrice"] = output["closePrice"].astype(str)
             output.loc[:, "closePrice"] = output.loc[:, "closePrice"].apply(
                         lambda x: colorText.FAIL + str("{:.2f}".format(x))+ colorText.END
                     )
+            output["peRatio"] = output["peRatio"].astype(str)
             output.loc[:, "peRatio"] = output.loc[:, "peRatio"].apply(
                         lambda x: colorText.GREEN + str("{:.2f}".format(x)).replace("nan","-")+ colorText.END
                     )
+            output["exchangeId"] = output["exchangeId"].astype(str)
             output.loc[:, "exchangeId"] = output.loc[:, "exchangeId"].apply(
-                        lambda x: colorText.FAIL + ("BSE" if x == "EX$$$$XBOM" else "NSE") + colorText.END
+                        lambda x: colorText.FAIL + ("BSE" if (x == "EX$$$$XBOM" or "BOM" in x) else "NSE") + colorText.END
                     )
             output.drop_duplicates(subset=['name'], keep='last',inplace=True)
             output.rename(
@@ -167,21 +172,27 @@ class morningstarDataFetcher(fetcher):
             output.loc[:, "Name"] = output.loc[:, "Name"].apply(
                         lambda x: " ".join(x.split(" ")[:6]).replace("Ordinary Shares","").replace("Shs Dematerialised","")
                     )
+            output["No Of  Shares"] = output["No Of  Shares"].astype(str)
             output.loc[:, "No Of  Shares"] = output.loc[:, "No Of  Shares"].apply(
                         lambda x: colorText.FAIL + str("{:.2f}".format(x/1000000)).replace("nan","-")+ "M" + colorText.END
                     )
+            output["Market Value  (Mil)"] = output["Market Value  (Mil)"].astype(str)
             output.loc[:, "Market Value  (Mil)"] = output.loc[:, "Market Value  (Mil)"].apply(
                         lambda x: colorText.FAIL + str("{:.2f}".format(x)).replace("nan","-")+ "M" + colorText.END
                     )
+            output["Weighting  %"] = output["Weighting  %"].astype(str)
             output.loc[:, "Weighting  %"] = output.loc[:, "Weighting  %"].apply(
                         lambda x: colorText.FAIL + str("{:.2f}".format(x)).replace("nan","-") + colorText.END
                     )
+            output["No Of  Funds"] = output["No Of  Funds"].astype(str)
             output.loc[:, "No Of  Funds"] = output.loc[:, "No Of  Funds"].apply(
                         lambda x: colorText.FAIL + str("{:.2f}".format(x)).replace("nan","-") + colorText.END
                     )
+            output["Prev No  Of Shares"] = output["Prev No  Of Shares"].astype(str)
             output.loc[:, "Prev No  Of Shares"] = output.loc[:, "Prev No  Of Shares"].apply(
                         lambda x: colorText.FAIL + str("{:.2f}".format(x/1000000)).replace("nan","-")+ "M" + colorText.END
                     )
+            output["Change  In Shares"] = output["Change  In Shares"].astype(str)
             output.loc[:, "Change  In Shares"] = output.loc[:, "Change  In Shares"].apply(
                         lambda x: (colorText.GREEN if x > 0 else colorText.FAIL)+ str("{:.2f}".format(x/1000000)).replace("nan","-")+ "M" + colorText.END
                     )
