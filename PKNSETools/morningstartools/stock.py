@@ -25,7 +25,7 @@
 # import PKNSETools.morningstartools
 # __package__ = 'PKNSETools.morningstartools'
 from .security import Security
-
+import pandas as pd
 
 class Stock(Security):
     """
@@ -46,7 +46,7 @@ class Stock(Security):
 
     """
 
-    def __init__(self, term = None, exchange: str = "", pageSize : int =1, itemRange: int = 0, filters: dict = {}, proxies: dict = {}):
+    def __init__(self, term = None, exchange: str = "INDIA", pageSize : int =1, itemRange: int = 0, filters: dict = {}, proxies: dict = {}):
         
         super().__init__(term=term,asset_type='stock',exchange=exchange,pageSize=pageSize,itemRange=itemRange,filters=filters,proxies=proxies)
 
@@ -290,7 +290,7 @@ class Stock(Security):
         
         return self.financialStatement("incomestatement",period=period, reportType=reportType)
     
-    def institutionBuyers(self, top=20):
+    def institutionBuyers(self, top=50):
         """
         This function retrieves the institutions which buy the stock.
 
@@ -309,7 +309,7 @@ class Stock(Security):
         
         return self.GetData("ownership/v1", url_suffixe= f"Buyers/institution/{top}/data")
     
-    def institutionConcentratedOwners(self, top=20):
+    def institutionConcentratedOwners(self, top=50):
         """
         This function retrieves the institutions which are concentrated on the stock.
 
@@ -328,7 +328,7 @@ class Stock(Security):
         
         return self.GetData("ownership/v1", url_suffixe= f"ConcentratedOwners/institution/{top}/data")
     
-    def institutionOwnership(self, top=20):
+    def institutionOwnership(self, top=50):
         """
         This function retrieves the main institutions which own the stock.
 
@@ -347,7 +347,7 @@ class Stock(Security):
         
         return self.GetData("ownership/v1", url_suffixe= f"OwnershipData/institution/{top}/data")
     
-    def institutionSellers(self, top=20):
+    def institutionSellers(self, top=50):
         """
         This function retrieves the institutions which sell on the stock.
 
@@ -390,7 +390,7 @@ class Stock(Security):
         """
         return self.GetData("keyratios")
     
-    def mutualFundBuyers(self, top=20):
+    def mutualFundBuyers(self, top=50):
         """
         This function retrieves the mutual funds which buy the stock.
 
@@ -409,7 +409,7 @@ class Stock(Security):
         
         return self.GetData("ownership/v1", url_suffixe= f"Buyers/mutualfund/{top}/data")
     
-    def mutualFundConcentratedOwners(self, top=20):
+    def mutualFundConcentratedOwners(self, top=50):
         """
         This function retrieves the mutual funds which are concentrated on the stock.
 
@@ -428,7 +428,7 @@ class Stock(Security):
         
         return self.GetData("ownership/v1", url_suffixe= f"ConcentratedOwners/mutualfund/{top}/data")
     
-    def mutualFundOwnership(self, top=20):
+    def mutualFundOwnership(self, top=50):
         """
         This function retrieves the main mutual funds which own the stock.
 
@@ -447,7 +447,7 @@ class Stock(Security):
         
         return self.GetData("ownership/v1", url_suffixe= f"OwnershipData/mutualfund/{top}/data")
     
-    def mutualFundSellers(self, top=20):
+    def mutualFundSellers(self, top=50):
         """
         This function retrieves the mutual funds which sell on the stock.
 
@@ -571,38 +571,52 @@ class Stock(Security):
         """
         return self.GetData("valuation", url_suffixe='')
 
-# stockName = "idea"
-# import pandas as pd
+    def changeData(self, rows=None):
+        if rows is None:
+            return
+        d = pd.DataFrame(rows["rows"])
+        d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else None
+        return d
+
+# stockName = "sbin"
 # R = Stock(stockName, exchange="INDIA").mutualFundSellers(top=50)
 # d = pd.DataFrame(R["rows"])
 # d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
 # print(f"mutualFundSellers:\n{d}")
+# d.to_csv("mutualFundSellers.csv")
 # R = Stock(stockName, exchange="INDIA").mutualFundOwnership(top=50)
 # d = pd.DataFrame(R["rows"])
 # d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
 # print(f"mutualFundOwnership:\n{d}")
+# d.to_csv("mutualFundOwnership.csv")
 # R = Stock(stockName, exchange="INDIA").mutualFundConcentratedOwners(top=50)
 # d = pd.DataFrame(R["rows"])
 # d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
 # print(f"mutualFundConcentratedOwners:\n{d}")
+# d.to_csv("mutualFundConcentratedOwners.csv")
 # R = Stock(stockName, exchange="INDIA").mutualFundBuyers(top=50)
 # d = pd.DataFrame(R["rows"])
 # d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
 # print(f"mutualFundBuyers:\n{d}")
+# d.to_csv("mutualFundBuyers.csv")
 
 # R = Stock(stockName, exchange="INDIA").institutionSellers(top=50)
 # d = pd.DataFrame(R["rows"])
 # d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
 # print(f"institutionSellers:\n{d}")
+# d.to_csv("institutionSellers.csv")
 # R = Stock(stockName, exchange="INDIA").institutionOwnership(top=50)
 # d = pd.DataFrame(R["rows"])
 # d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
 # print(f"institutionOwnership:\n{d}")
+# d.to_csv("institutionOwnership.csv")
 # R = Stock(stockName, exchange="INDIA").institutionConcentratedOwners(top=50)
 # d = pd.DataFrame(R["rows"])
 # d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
 # print(f"institutionConcentratedOwners:\n{d}")
+# d.to_csv("institutionConcentratedOwners.csv")
 # R = Stock(stockName, exchange="INDIA").institutionBuyers(top=50)
 # d = pd.DataFrame(R["rows"])
 # d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
 # print(f"institutionBuyers:\n{d}")
+# d.to_csv("institutionBuyers.csv")
