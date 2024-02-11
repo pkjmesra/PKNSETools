@@ -571,52 +571,59 @@ class Stock(Security):
         """
         return self.GetData("valuation", url_suffixe='')
 
-    def changeData(self, rows=None):
-        if rows is None:
+    def changeData(self, rows=None, sortKey="date"):
+        if rows is None or len(rows) < 1:
             return
         d = pd.DataFrame(rows["rows"])
-        d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else None
+        d = d[["name","currentShares", "date","changeAmount","changePercentage"]]
+        if (d is not None and len(d) > 0):
+            d.sort_values(by=[sortKey], ascending=False, inplace=True)
         return d
 
-# stockName = "sbin"
-# R = Stock(stockName, exchange="INDIA").mutualFundSellers(top=50)
-# d = pd.DataFrame(R["rows"])
-# d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
+# stockName = "BANKINDIA"
+# combined_pd = None
+# stk = Stock(stockName)
+# R = stk.mutualFundSellers(top=50)
+# d = stk.changeData(R)
+# combined_pd = d
 # print(f"mutualFundSellers:\n{d}")
 # d.to_csv("mutualFundSellers.csv")
-# R = Stock(stockName, exchange="INDIA").mutualFundOwnership(top=50)
-# d = pd.DataFrame(R["rows"])
-# d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
+# R = stk.mutualFundOwnership(top=50)
+# d = stk.changeData(R)
+# combined_pd = pd.concat([combined_pd, d], axis=0)
 # print(f"mutualFundOwnership:\n{d}")
 # d.to_csv("mutualFundOwnership.csv")
-# R = Stock(stockName, exchange="INDIA").mutualFundConcentratedOwners(top=50)
-# d = pd.DataFrame(R["rows"])
-# d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
+# R = stk.mutualFundConcentratedOwners(top=50)
+# d = stk.changeData(R)
+# combined_pd = pd.concat([combined_pd, d], axis=0)
 # print(f"mutualFundConcentratedOwners:\n{d}")
 # d.to_csv("mutualFundConcentratedOwners.csv")
-# R = Stock(stockName, exchange="INDIA").mutualFundBuyers(top=50)
-# d = pd.DataFrame(R["rows"])
-# d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
+# R = stk.mutualFundBuyers(top=50)
+# d = stk.changeData(R)
+# combined_pd = pd.concat([combined_pd, d], axis=0)
 # print(f"mutualFundBuyers:\n{d}")
 # d.to_csv("mutualFundBuyers.csv")
-
-# R = Stock(stockName, exchange="INDIA").institutionSellers(top=50)
-# d = pd.DataFrame(R["rows"])
-# d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
+# combined_pd = pd.concat([combined_pd, d], axis=0)
+# R = stk.institutionSellers(top=50)
+# d = stk.changeData(R)
+# combined_pd = pd.concat([combined_pd, d], axis=0)
 # print(f"institutionSellers:\n{d}")
 # d.to_csv("institutionSellers.csv")
-# R = Stock(stockName, exchange="INDIA").institutionOwnership(top=50)
-# d = pd.DataFrame(R["rows"])
-# d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
+# R = stk.institutionOwnership(top=50)
+# d = stk.changeData(R)
+# combined_pd = pd.concat([combined_pd, d], axis=0)
 # print(f"institutionOwnership:\n{d}")
 # d.to_csv("institutionOwnership.csv")
-# R = Stock(stockName, exchange="INDIA").institutionConcentratedOwners(top=50)
-# d = pd.DataFrame(R["rows"])
-# d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
+# R = stk.institutionConcentratedOwners(top=50)
+# d = stk.changeData(R)
+# combined_pd = pd.concat([combined_pd, d], axis=0)
 # print(f"institutionConcentratedOwners:\n{d}")
 # d.to_csv("institutionConcentratedOwners.csv")
-# R = Stock(stockName, exchange="INDIA").institutionBuyers(top=50)
-# d = pd.DataFrame(R["rows"])
-# d = d[["name","currentShares", "date","changeAmount","changePercentage"]] if (d is not None and len(d) > 0) else ""
+# R = stk.institutionBuyers(top=50)
+# d = stk.changeData(R)
+# combined_pd = pd.concat([combined_pd, d], axis=0)
 # print(f"institutionBuyers:\n{d}")
 # d.to_csv("institutionBuyers.csv")
+# combined_pd.sort_values(by=["date"], ascending=False, inplace=True)
+# combined_pd.drop_duplicates(inplace=True)
+# combined_pd.to_csv("combined.csv")
