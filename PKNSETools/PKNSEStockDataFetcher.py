@@ -221,7 +221,7 @@ class nseStockDataFetcher(fetcher):
                     marketStatusShort = market["marketStatus"]
                     change = int(round(market["variation"],0))
                     pctChange = round(market["percentChange"],2)
-                    change = ((colorText.GREEN +"↑")if change >=0 else colorText.FAIL+"↓") + str(change) + colorText.END
+                    change = ((colorText.GREEN +"▲")if change >=0 else colorText.FAIL+"▼") + str(change) + colorText.END
                     pctChange = (colorText.GREEN if pctChange >=0 else colorText.FAIL) + str(pctChange) + colorText.END
                     marketStatusLong = f'{market["index"]} | {marketStatusShort} | {market["tradeDate"]} | {market["last"]} | {change} ({pctChange}%)'
                     break
