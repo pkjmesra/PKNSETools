@@ -572,8 +572,8 @@ class Stock(Security):
         return self.GetData("valuation", url_suffixe='')
 
     def changeData(self, rows=None, sortKey="date"):
-        if rows is None or len(rows) < 1:
-            return
+        if rows is None or len(rows) < 1 or len(rows["rows"]) < 1:
+            return None
         d = pd.DataFrame(rows["rows"])
         d = d[["name","currentShares", "date","changeAmount","changePercentage"]]
         if (d is not None and len(d) > 0):
