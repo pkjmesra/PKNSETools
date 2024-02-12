@@ -22,8 +22,8 @@
     SOFTWARE.
 
 """
-# import PKNSETools.morningstartools
-# __package__ = 'PKNSETools.morningstartools'
+import PKNSETools.morningstartools
+__package__ = 'PKNSETools.morningstartools'
 from .security import Security
 import pandas as pd
 
@@ -446,6 +446,18 @@ class Stock(Security):
             raise TypeError('top parameter should be an integer')
         
         return self.GetData("ownership/v1", url_suffixe= f"OwnershipData/mutualfund/{top}/data")
+        return self.GetData("priceFairValue/v3/", url_suffixe= f"/data")
+        params = {
+                "secExchangeList": "",
+                "locale" :"en",
+                "languageId": "en",
+                "clientId":"RSIN_SAL",
+                "component":"sal-price-fairvalue",
+                "version":"4.13.0",
+                "access_token":"OAg7sEUU8PQ1V8pyXApDCAyzuxqr",
+
+            }
+
     
     def mutualFundSellers(self, top=50):
         """
@@ -571,6 +583,35 @@ class Stock(Security):
         """
         return self.GetData("valuation", url_suffixe='')
 
+    def fairValue(self):
+        """
+        This function retrieves the fair value of the stock.
+
+        Args:
+            top (int) : number of mutual funds to return
+        Returns:
+            dict with the fair value
+
+        Examples:
+            >>> Stock("visa", exchange="nyse").fairValue()
+  
+        """
+        params = {
+            "secExchangeList": "",
+            "locale" :"en",
+            "languageId": "en",
+            "clientId":"RSIN_SAL",
+            "component":"sal-price-fairvalue",
+            "version":"4.13.0",
+            "access_token":"OAg7sEUU8PQ1V8pyXApDCAyzuxqr",
+            }
+        headers = {
+            "X-Api-Realtime-E": "ew0KICAiYWxnIjogIlJTQS1PQUVQIiwNCiAgImVuYyI6ICJBMTI4R0NNIg0KfQ.W4pGZbjPWyUkcwcaGY39TU2293P-E7Sy_LYI_8-h-HFUFEDSbM1Li7c4D880QOw-jQPxXdOirJIMn1bj6px4kd3Bsij5jal16cFJjtwLbCdZ_ONVUywlZLhfKHeOfaXlZCQrN6HAi9l49-iYHWAfryiAVrYTm5WIseP1inRkopg.1fPJ5lD9xM0wnRSM.8NzTksDBHjQpQMFIbImiQz6HAVLhqNNIm8rKFQ3LojEEOyB8Q9vTbMQy3bABMRv4rnahT1uI51cJlg9Fv2rilCUsBskNTDRkAh02TVHCE4z7PKOCWWWdzlNt-Yh195MhQq1Vras4_PCmkCBdEKkY8ooF5-D8kEUWl_LXy6dUj4ytvy7wGMLxMp6pgWAHMLBPW9PxAlKGWZAHs0x7qm1TIlF4M5WAdKBE4d69hyaMFqIEoNmqjnx_1sMdnTNgVK2KBgHdn007.pW2CchSpaWFh95YttagfLg",
+            "X-Sal-Contenttype": "nNsGdN3REOnPMlKDShOYjlk6VYiEVLSdpfpXAm7o2Tk="
+        }
+        return self.GetData("priceFairValue/v3", params=params, url_suffixe= f"data", headers=headers)
+        # fv["chart"]["chartDatums"]["recent"]["latestFairValue"]
+        
     def changeData(self, rows=None, sortKey="date"):
         if rows is None or len(rows) < 1 or len(rows["rows"]) < 1:
             return None
@@ -583,6 +624,8 @@ class Stock(Security):
 # stockName = "BANKINDIA"
 # combined_pd = None
 # stk = Stock(stockName)
+# fv = stk.fairValue()
+# fv["chart"]["chartDatums"]["recent"]["latestFairValue"]
 # R = stk.mutualFundSellers(top=50)
 # d = stk.changeData(R)
 # combined_pd = d
