@@ -31,6 +31,7 @@ import requests
 from .error import not_200_response
 from .search import search_funds, search_stock, token_chart
 from .utils import APIKEY, SITE, random_user_agent
+from PKDevTools.classes.Fetcher import fetcher
 
 #with Universe field, we can detect the asset class
 #done find all stock echange and create a search_equity method
@@ -81,7 +82,7 @@ class Security:
             raise TypeError('proxies parameter should be dict')
 
         self.proxies = proxies
-
+        self.fetcher = fetcher()
         if country:
             self.site = SITE[country.lower()]["site"]
         else:
@@ -191,8 +192,8 @@ class Security:
         all_headers = default_headers | headers
         
 
-        response = requests.get(url,params=params, headers=all_headers,proxies=self.proxies)
-
+        # response = requests.get(url,params=params, headers=all_headers,proxies=self.proxies)
+        response = self.fetcher.fetchURL(url,headers=all_headers,params=params)
 
         not_200_response(url,response)
 
