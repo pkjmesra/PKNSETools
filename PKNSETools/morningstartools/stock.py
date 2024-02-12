@@ -22,8 +22,8 @@
     SOFTWARE.
 
 """
-import PKNSETools.morningstartools
-__package__ = 'PKNSETools.morningstartools'
+# import PKNSETools.morningstartools
+# __package__ = 'PKNSETools.morningstartools'
 from .security import Security
 import pandas as pd
 
