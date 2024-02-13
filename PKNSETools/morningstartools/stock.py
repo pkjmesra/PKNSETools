@@ -26,6 +26,10 @@
 # __package__ = 'PKNSETools.morningstartools'
 from .security import Security
 import pandas as pd
+from PKDevTools.classes.CookieHelper import CookieHelper
+from PKDevTools.classes import Archiver
+from PKDevTools.classes.Fetcher import session
+from PKDevTools.classes.log import default_logger
 
 class Stock(Security):
     """
@@ -49,8 +53,31 @@ class Stock(Security):
     def __init__(self, term = None, exchange: str = "INDIA", pageSize : int =1, itemRange: int = 0, filters: dict = {}, proxies: dict = {}):
         
         super().__init__(term=term,asset_type='stock',exchange=exchange,pageSize=pageSize,itemRange=itemRange,filters=filters,proxies=proxies)
+        self.cookieHelper = None
+        self.defaultHeaders = Stock.morningstarDefaultHeaders()
+        self.defaultParams = Stock.morningstarDefaultParams()
+        self.defaultCookies = None
 
-
+    @staticmethod
+    def morningstarDefaultParams():
+        params = {
+            "secExchangeList": "",
+            "locale" :"en",
+            "languageId": "en",
+            "clientId":"RSIN_SAL",
+            "component":"sal-price-fairvalue",
+            "version":"4.13.0",
+            "access_token":"OAg7sEUU8PQ1V8pyXApDCAyzuxqr",
+            }
+        return params
+    
+    @staticmethod
+    def morningstarDefaultHeaders():
+        headers = {
+            "X-Api-Realtime-E": "ew0KICAiYWxnIjogIlJTQS1PQUVQIiwNCiAgImVuYyI6ICJBMTI4R0NNIg0KfQ.W4pGZbjPWyUkcwcaGY39TU2293P-E7Sy_LYI_8-h-HFUFEDSbM1Li7c4D880QOw-jQPxXdOirJIMn1bj6px4kd3Bsij5jal16cFJjtwLbCdZ_ONVUywlZLhfKHeOfaXlZCQrN6HAi9l49-iYHWAfryiAVrYTm5WIseP1inRkopg.1fPJ5lD9xM0wnRSM.8NzTksDBHjQpQMFIbImiQz6HAVLhqNNIm8rKFQ3LojEEOyB8Q9vTbMQy3bABMRv4rnahT1uI51cJlg9Fv2rilCUsBskNTDRkAh02TVHCE4z7PKOCWWWdzlNt-Yh195MhQq1Vras4_PCmkCBdEKkY8ooF5-D8kEUWl_LXy6dUj4ytvy7wGMLxMp6pgWAHMLBPW9PxAlKGWZAHs0x7qm1TIlF4M5WAdKBE4d69hyaMFqIEoNmqjnx_1sMdnTNgVK2KBgHdn007.pW2CchSpaWFh95YttagfLg",
+            "X-Sal-Contenttype": "nNsGdN3REOnPMlKDShOYjlk6VYiEVLSdpfpXAm7o2Tk="
+        }
+        return headers
 
     def analysisData(self):
         """
@@ -345,7 +372,13 @@ class Stock(Security):
         if not isinstance(top, int):
             raise TypeError('top parameter should be an integer')
         
-        return self.GetData("ownership/v1", url_suffixe= f"OwnershipData/institution/{top}/data")
+        try:
+            r = self.GetData("ownership/v1", url_suffixe= f"OwnershipData/institution/{top}/data", params=self.defaultParams, headers=self.defaultHeaders)
+        except ConnectionError as e:
+            default_logger().debug(e,exc_info=True)
+            self.refreshMorningstarTokens(self.defaultParams, self.defaultHeaders)
+            r = self.GetData("ownership/v1", url_suffixe= f"OwnershipData/institution/{top}/data", params=self.defaultParams, headers=self.defaultHeaders)
+        return r
     
     def institutionSellers(self, top=50):
         """
@@ -445,7 +478,13 @@ class Stock(Security):
         if not isinstance(top, int):
             raise TypeError('top parameter should be an integer')
         
-        return self.GetData("ownership/v1", url_suffixe= f"OwnershipData/mutualfund/{top}/data")
+        try:
+            r = self.GetData("ownership/v1", url_suffixe= f"OwnershipData/mutualfund/{top}/data", params=self.defaultParams, headers=self.defaultHeaders)
+        except ConnectionError as e:
+            default_logger().debug(e,exc_info=True)
+            self.refreshMorningstarTokens(self.defaultParams, self.defaultHeaders)
+            r = self.GetData("ownership/v1", url_suffixe= f"OwnershipData/mutualfund/{top}/data", params=self.defaultParams, headers=self.defaultHeaders)
+        return r
     
     def mutualFundSellers(self, top=50):
         """
@@ -584,21 +623,33 @@ class Stock(Security):
             >>> Stock("visa", exchange="nyse").fairValue()
   
         """
-        params = {
-            "secExchangeList": "",
-            "locale" :"en",
-            "languageId": "en",
-            "clientId":"RSIN_SAL",
-            "component":"sal-price-fairvalue",
-            "version":"4.13.0",
-            "access_token":"OAg7sEUU8PQ1V8pyXApDCAyzuxqr",
-            }
-        headers = {
-            "X-Api-Realtime-E": "ew0KICAiYWxnIjogIlJTQS1PQUVQIiwNCiAgImVuYyI6ICJBMTI4R0NNIg0KfQ.W4pGZbjPWyUkcwcaGY39TU2293P-E7Sy_LYI_8-h-HFUFEDSbM1Li7c4D880QOw-jQPxXdOirJIMn1bj6px4kd3Bsij5jal16cFJjtwLbCdZ_ONVUywlZLhfKHeOfaXlZCQrN6HAi9l49-iYHWAfryiAVrYTm5WIseP1inRkopg.1fPJ5lD9xM0wnRSM.8NzTksDBHjQpQMFIbImiQz6HAVLhqNNIm8rKFQ3LojEEOyB8Q9vTbMQy3bABMRv4rnahT1uI51cJlg9Fv2rilCUsBskNTDRkAh02TVHCE4z7PKOCWWWdzlNt-Yh195MhQq1Vras4_PCmkCBdEKkY8ooF5-D8kEUWl_LXy6dUj4ytvy7wGMLxMp6pgWAHMLBPW9PxAlKGWZAHs0x7qm1TIlF4M5WAdKBE4d69hyaMFqIEoNmqjnx_1sMdnTNgVK2KBgHdn007.pW2CchSpaWFh95YttagfLg",
-            "X-Sal-Contenttype": "nNsGdN3REOnPMlKDShOYjlk6VYiEVLSdpfpXAm7o2Tk="
-        }
-        return self.GetData("priceFairValue/v3", params=params, url_suffixe= f"data", headers=headers)
-        # fv["chart"]["chartDatums"]["recent"]["latestFairValue"]
+        params = self.defaultParams
+        headers = self.defaultHeaders
+        try:
+            r = self.GetData("priceFairValue/v3", params=params, url_suffixe= f"data", headers=headers)
+            # fv["chart"]["chartDatums"]["recent"]["latestFairValue"]
+        except ConnectionError as e:
+            default_logger().debug(e,exc_info=True)
+            self.refreshMorningstarTokens(params, headers)
+            r = self.GetData("priceFairValue/v3", params=params, url_suffixe= f"data", headers=headers)
+        return r
+
+    def refreshMorningstarTokens(self, params, headers):
+        if self.cookieHelper is None:
+            self.cookieHelper = CookieHelper(download_folder=Archiver.get_user_outputs_dir(),
+                                                 baseCookieUrl="https://morningstar.in/stocks/0p0000c3nz/nse-hdfc-bank-ltd/overview.aspx",
+                                                 cookieStoreName="morningstar",
+                                                 baseHtmlUrl="https://morningstar.in/stocks/0p0000c3nz/nse-hdfc-bank-ltd/overview.aspx",
+                                                 htmlStoreName="morningstar")
+        else:
+            self.cookieHelper.resetCookies()
+            self.cookieHelper.resetMetas()
+        params["access_token"] = self.cookieHelper.html_metas["accessToken"]
+        headers["X-Api-Realtime-E"] = self.cookieHelper.html_metas["realTimeToken"]
+        self.fetcher.session.cookies.update(self.cookieHelper.cookies)
+        self.defaultCookies = self.cookieHelper.cookies
+        self.defaultHeaders = headers
+        self.defaultParams = params
         
     def changeData(self, rows=None, sortKey="date"):
         if rows is None or len(rows) < 1 or len(rows["rows"]) < 1:
@@ -612,8 +663,6 @@ class Stock(Security):
 # stockName = "BANKINDIA"
 # combined_pd = None
 # stk = Stock(stockName)
-# fv = stk.fairValue()
-# fv["chart"]["chartDatums"]["recent"]["latestFairValue"]
 # R = stk.mutualFundSellers(top=50)
 # d = stk.changeData(R)
 # combined_pd = d
@@ -658,3 +707,6 @@ class Stock(Security):
 # combined_pd.sort_values(by=["date"], ascending=False, inplace=True)
 # combined_pd.drop_duplicates(inplace=True)
 # combined_pd.to_csv("combined.csv")
+
+# fv = stk.fairValue()
+# print(fv["chart"]["chartDatums"]["recent"]["latestFairValue"])
