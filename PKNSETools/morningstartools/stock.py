@@ -57,6 +57,7 @@ class Stock(Security):
         self.defaultHeaders = Stock.morningstarDefaultHeaders()
         self.defaultParams = Stock.morningstarDefaultParams()
         self.defaultCookies = None
+        self.refreshMorningstarTokens()
 
     @staticmethod
     def morningstarDefaultParams():
