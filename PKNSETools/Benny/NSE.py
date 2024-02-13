@@ -32,6 +32,7 @@ from typing import Literal, Any, Union, List, Dict
 from datetime import datetime
 from zipfile import ZipFile
 from mthrottle import Throttle
+from PKDevTools.classes.Fetcher import fetcher, session
 
 throttleConfig = {
     'default': {
@@ -88,8 +89,8 @@ class NSE:
         self.dir = NSE.__getPath(download_folder, isFolder=True)
 
         self.cookie_path = self.dir / 'nse_cookies.pkl'
-
-        self.session = Session()
+        self.fetcher = fetcher()
+        self.session =  session #Session()
         self.session.headers.update(headers)
         self.session.cookies.update(self.__getCookies())
 
@@ -179,7 +180,7 @@ class NSE:
         th.check()
 
         try:
-            r = self.session.get(url, params=params, timeout=timeout)
+            r = self.fetcher.fetchURL(url=url, params=params)
         except ReadTimeout as e:
             raise TimeoutError(repr(e))
 
