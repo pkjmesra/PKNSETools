@@ -446,18 +446,6 @@ class Stock(Security):
             raise TypeError('top parameter should be an integer')
         
         return self.GetData("ownership/v1", url_suffixe= f"OwnershipData/mutualfund/{top}/data")
-        return self.GetData("priceFairValue/v3/", url_suffixe= f"/data")
-        params = {
-                "secExchangeList": "",
-                "locale" :"en",
-                "languageId": "en",
-                "clientId":"RSIN_SAL",
-                "component":"sal-price-fairvalue",
-                "version":"4.13.0",
-                "access_token":"OAg7sEUU8PQ1V8pyXApDCAyzuxqr",
-
-            }
-
     
     def mutualFundSellers(self, top=50):
         """
