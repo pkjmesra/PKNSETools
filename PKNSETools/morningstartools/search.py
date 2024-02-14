@@ -388,12 +388,15 @@ def search_stock(term,field,exchange, pageSize =10,currency ='INR', filters={}, 
     r = requests.get(f"https://morningstar.in/handlers/autocompletehandler.ashx?criteria={term}")
     if r is not None:
       stockDict = xmltodict.parse(r.text) # '{"QuoteData": {"Table": {"ID":"0P0000BI86", "Type":, "Ticker":, "Description":, "Exchange":}}}'
-      jsonResponse =  {"fundShareClassId": stockDict["QuoteData"]["Table"]["ID"],
-              "LegalName": stockDict["QuoteData"]["Table"]["Description"],
-              "Universe": "E0" + stockDict["QuoteData"]["Table"]["Exchange"],
-              "TenforeId": stockDict["QuoteData"]["Table"]["Ticker"]
-              }
-      return [jsonResponse]
+      if "QuoteData" in stockDict.keys():
+        for quote in stockDict["QuoteData"]:
+          if quote["Table"]["Ticker"] == term.upper():
+            jsonResponse =  {"fundShareClassId": quote["Table"]["ID"],
+                  "LegalName": quote["Table"]["Description"],
+                  "Universe": "E0" + quote["Table"]["Exchange"],
+                  "TenforeId": quote["Table"]["Ticker"]
+                  }
+        return [jsonResponse]
   except:
      pass
   
