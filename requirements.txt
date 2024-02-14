@@ -6,3 +6,4 @@ PKDevTools
 pytz
 requests
 urllib3
+xmltodict

@@ -24,6 +24,7 @@
 """
 import json
 import re
+import xmltodict
 
 import requests
 from bs4 import BeautifulSoup
@@ -106,7 +107,7 @@ def general_search(params, proxies={}):
                                 'outputType' : 'json',
                                 'version' : 1,
                                 'universeIds' : 'FOFRA$$ALL',
-                                'currencyId': 'EUR',
+                                'currencyId': 'INR',
                                 'securityDataPoints' : ['FundTNAV','GBRReturnD1'],
                                 'term' : 'myria',
                                 })
@@ -119,7 +120,7 @@ def general_search(params, proxies={}):
   if not isinstance(proxies, dict):
     raise TypeError('proxies parameter should be dict')
   #url
-  url = "https://tools.morningstar.co.uk/api/rest.svc/klr5zyak8x/security/screener"
+  url = "https://tools.morningstar.co.in/api/rest.svc/klr5zyak8x/security/screener"
   #headers
   headers = {
               'user-agent': random_user_agent(),
@@ -194,7 +195,7 @@ def search_filter(pattern = '', asset_type ='fund'):
 
   return filtered_list
 
-def search_funds(term, field, country = "", pageSize=10, currency ='EUR', filters={}, proxies = {}):
+def search_funds(term, field, country = "", pageSize=10, currency ='INR', filters={}, proxies = {}):
   """
   This function will use the screener of morningstar.co.uk to find funds which include the term.
 
@@ -295,7 +296,7 @@ def search_funds(term, field, country = "", pageSize=10, currency ='EUR', filter
     print('0 fund found with the term %s' % (term))
     return {}
 
-def search_stock(term,field,exchange, pageSize =10,currency ='EUR', filters={}, proxies={}):
+def search_stock(term,field,exchange, pageSize =10,currency ='INR', filters={}, proxies={}):
   """
   This function will use the screener of morningstar.co.uk to find stocks which include the term.
 
@@ -383,6 +384,19 @@ def search_stock(term,field,exchange, pageSize =10,currency ='EUR', filters={}, 
   'filters' : '|'.join(filter_list),
   }
 
+  try:
+    r = requests.get(f"https://morningstar.in/handlers/autocompletehandler.ashx?criteria={term}")
+    if r is not None:
+      stockDict = xmltodict.parse(r.text) # '{"QuoteData": {"Table": {"ID":"0P0000BI86", "Type":, "Ticker":, "Description":, "Exchange":}}}'
+      jsonResponse =  {"fundShareClassId": stockDict["QuoteData"]["Table"]["ID"],
+              "LegalName": stockDict["QuoteData"]["Table"]["Description"],
+              "Universe": "E0" + stockDict["QuoteData"]["Table"]["Exchange"],
+              "TenforeId": stockDict["QuoteData"]["Table"]["Ticker"]
+              }
+      return [jsonResponse]
+  except:
+     pass
+  
   result = general_search(params, proxies=proxies)
 
   if result['rows']:
@@ -390,6 +404,7 @@ def search_stock(term,field,exchange, pageSize =10,currency ='EUR', filters={}, 
   else:
     default_logger().debug(f'0 stock found with the term {term}')
     return {}
+  
 def token_chart(proxies={}):
   """
   This function will scrape the Bearer Token needed to access MS API chart data

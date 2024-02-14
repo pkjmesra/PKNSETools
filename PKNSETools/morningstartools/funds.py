@@ -328,7 +328,7 @@ class Funds(Security):
         """
         return self.GetData("portfolio/creditQuality")
 
-    def dataPoint(self, field, currency ='EUR'):
+    def dataPoint(self, field, currency ='INR'):
         """
         This function retrieves infos about funds such as name, performance, risk metrics...
 

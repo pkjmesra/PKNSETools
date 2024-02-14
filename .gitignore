@@ -8,3 +8,4 @@ PKNSETools/morningstartool/__pycache__
 .DS_Store
 *.pkl
 *.sqlite
+launch.json
