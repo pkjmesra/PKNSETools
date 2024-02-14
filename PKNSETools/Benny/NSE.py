@@ -77,7 +77,7 @@ class NSE:
 
         uAgent = 'Mozilla/5.0 (Windows NT 10.0; rv:109.0) Gecko/20100101 Firefox/118.0'
 
-        headers = {
+        self.default_headers = {
             'User-Agent': uAgent,
             'Accept': '*/*',
             'Accept-Language': 'en-US,en;q=0.5',
@@ -90,8 +90,8 @@ class NSE:
 
         self.cookie_path = self.dir / 'nse_cookies.pkl'
         self.fetcher = fetcher()
-        self.session =  session #Session()
-        self.session.headers.update(headers)
+        self.session = self.fetcher.session #Session()
+        self.session.headers.update(self.default_headers)
         self.session.cookies.update(self.__getCookies())
 
     def __setCookies(self):
@@ -180,7 +180,7 @@ class NSE:
         th.check()
 
         try:
-            r = self.fetcher.fetchURL(url=url, params=params)
+            r = self.fetcher.fetchURL(url=url, params=params, headers=self.default_headers)
         except ReadTimeout as e:
             raise TimeoutError(repr(e))
 
