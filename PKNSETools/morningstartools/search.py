@@ -397,7 +397,8 @@ def search_stock(term,field,exchange, pageSize =10,currency ='INR', filters={}, 
                   "TenforeId": quote["Table"]["Ticker"]
                   }
         return [jsonResponse]
-  except:
+  except Exception as e:
+     default_logger().debug(e, exc_info=True)
      pass
   
   result = general_search(params, proxies=proxies)
