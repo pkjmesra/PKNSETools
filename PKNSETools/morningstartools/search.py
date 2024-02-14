@@ -399,7 +399,8 @@ def search_stock(term,field,exchange, pageSize =10,currency ='INR', filters={}, 
                 "Universe": "E0" + table["Exchange"],
                 "TenforeId": table["Ticker"]
                 }
-      return [jsonResponse]
+      if jsonResponse != {}:
+        return [jsonResponse]
   except Exception as e:
      default_logger().debug(e, exc_info=True)
      pass
