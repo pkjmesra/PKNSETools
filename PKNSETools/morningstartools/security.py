@@ -83,6 +83,7 @@ class Security:
 
         self.proxies = proxies
         self.fetcher = fetcher()
+        self.term = term
         if country:
             self.site = SITE[country.lower()]["site"]
         else:

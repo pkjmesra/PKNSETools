@@ -376,7 +376,7 @@ class Stock(Security):
         try:
             r = self.GetData("ownership/v1", url_suffixe= f"OwnershipData/institution/{top}/data", params=self.defaultParams, headers=self.defaultHeaders)
         except ConnectionError as e:
-            default_logger().debug(e,exc_info=True)
+            default_logger().debug(f"{e}:\n{self.term}:Going to retrieve/reset the cookies and meta tags!",exc_info=True)
             self.refreshMorningstarTokens(self.defaultParams, self.defaultHeaders)
             r = self.GetData("ownership/v1", url_suffixe= f"OwnershipData/institution/{top}/data", params=self.defaultParams, headers=self.defaultHeaders)
         return r
@@ -482,7 +482,7 @@ class Stock(Security):
         try:
             r = self.GetData("ownership/v1", url_suffixe= f"OwnershipData/mutualfund/{top}/data", params=self.defaultParams, headers=self.defaultHeaders)
         except ConnectionError as e:
-            default_logger().debug(e,exc_info=True)
+            default_logger().debug(f"{e}:\n{self.term}:Going to retrieve/reset the cookies and meta tags!",exc_info=True)
             self.refreshMorningstarTokens(self.defaultParams, self.defaultHeaders)
             r = self.GetData("ownership/v1", url_suffixe= f"OwnershipData/mutualfund/{top}/data", params=self.defaultParams, headers=self.defaultHeaders)
         return r
@@ -630,7 +630,7 @@ class Stock(Security):
             r = self.GetData("priceFairValue/v3", params=params, url_suffixe= f"data", headers=headers)
             # fv["chart"]["chartDatums"]["recent"]["latestFairValue"]
         except ConnectionError as e:
-            default_logger().debug(e,exc_info=True)
+            default_logger().debug(f"{e}:\n{self.term}:Going to retrieve/reset the cookies and meta tags!",exc_info=True)
             self.refreshMorningstarTokens(params, headers)
             r = self.GetData("priceFairValue/v3", params=params, url_suffixe= f"data", headers=headers)
         return r
