@@ -29,6 +29,8 @@ def not_200_response(url,response):
     This function raise a ConnectionError if the status code a requests is not 200.
 
     """
+    if response is None:
+        raise ConnectionError(f"Error for the api {url}.")
     if not response.status_code == 200:
         raise ConnectionError(f"Error {response.status_code} for the api {url}. Message : {response.reason}.")
 
