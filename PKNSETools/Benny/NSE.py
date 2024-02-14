@@ -36,7 +36,7 @@ from PKDevTools.classes.Fetcher import fetcher, session
 
 throttleConfig = {
     'default': {
-        'rps': 10,
+        'rps': 4,
     },
 }
 
