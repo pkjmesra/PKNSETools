@@ -32,6 +32,7 @@ from .error import not_200_response
 from .utils import (ASSET_TYPE, EXCHANGE, FIELDS, FILTER_FUND, FILTER_STOCK,
                     SITE, random_user_agent)
 
+from PKDevTools.classes.log import default_logger
 
 def filter_universe(field = FILTER_FUND, proxies = {}):
   """
@@ -291,7 +292,7 @@ def search_funds(term, field, country = "", pageSize=10, currency ='EUR', filter
   if result['rows']:
     return result['rows']
   else:
-    print('0 fund found whith the term %s' % (term))
+    print('0 fund found with the term %s' % (term))
     return {}
 
 def search_stock(term,field,exchange, pageSize =10,currency ='EUR', filters={}, proxies={}):
@@ -387,7 +388,7 @@ def search_stock(term,field,exchange, pageSize =10,currency ='EUR', filters={}, 
   if result['rows']:
     return result['rows']
   else:
-    print('0 stock found whith the term %s' % (term))
+    default_logger().debug(f'0 stock found with the term {term}')
     return {}
 def token_chart(proxies={}):
   """
