@@ -180,7 +180,7 @@ class NSE:
         th.check()
 
         try:
-            r = self.fetcher.fetchURL(url=url, params=params,timeout=20)
+            r = self.fetcher.fetchURL(url=url, params=params)
         except ReadTimeout as e:
             raise TimeoutError(repr(e))
 
