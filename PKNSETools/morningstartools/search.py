@@ -383,28 +383,13 @@ def search_stock(term,field,exchange, pageSize =10,currency ='INR', filters={}, 
   'term' : term,
   'filters' : '|'.join(filter_list),
   }
-
-  try:
-    r = requests.get(f"https://morningstar.in/handlers/autocompletehandler.ashx?criteria={term}")
-    if r is not None:
-      stockDict = xmltodict.parse(r.text) # '{"QuoteData": {"Table": {"ID":"0P0000BI86", "Type":, "Ticker":, "Description":, "Exchange":}}}'
-      jsonResponse = {}
-      tables = stockDict["QuoteData"]["Table"]
-      if not isinstance(tables, list):
-         tables = [tables]
-      for table in tables:
-        if table["Ticker"].startswith(term.upper()) or table["Ticker"].endswith(term.upper()):
-          jsonResponse =  {"fundShareClassId": table["ID"],
-                "LegalName": table["Description"],
-                "Universe": "E0" + table["Exchange"],
-                "TenforeId": table["Ticker"]
-                }
-      if jsonResponse != {}:
-        return [jsonResponse]
-  except Exception as e:
-     default_logger().debug(e, exc_info=True)
-     pass
-  
+  result = search_stock_autocomplete(term=term, filter=False)
+  if len(result) > 0:
+    return result
+  else:
+    result = search_stock_autocomplete(term=term, filter=True)
+    if len(result) > 0:
+      return result
   result = general_search(params, proxies=proxies)
 
   if result['rows']:
@@ -412,7 +397,70 @@ def search_stock(term,field,exchange, pageSize =10,currency ='INR', filters={}, 
   else:
     default_logger().debug(f'0 stock found with the term {term}')
     return {}
-  
+
+def search_stock_autocomplete(term,filter=False):
+  search_results = []
+  try:
+    r = requests.get(f"https://morningstar.in/handlers/autocompletehandler.ashx?criteria={term}{'&sender=sm' if filter else ''}")
+    # with sender=sm
+    # <StockList xmlns="" Criteria="RELIANCE">
+    # <Table>
+    # <ID>0P0000CBCF</ID>
+    # <ScripName>Reliance Capital Ltd</ScripName>
+    # <ShortName>RELCAPITAL</ShortName>
+    # <ISIN>INE013A01015</ISIN>
+    # <Exchange>BOM</Exchange>
+    # <Symbol>500111</Symbol>
+    # <Sector>Financial Services</Sector>
+    # <LastPrice>11.78</LastPrice>
+    # <LastPriceDate>14/02/2024</LastPriceDate>
+    # <LastToLastPrice>11.78</LastToLastPrice>
+    # <PercentChange>0.00</PercentChange>
+    # <STARRATING>-</STARRATING>
+    # </Table>
+    
+    # Without sender=sm
+    #<QuoteData>
+    # <Table>
+    # <ID>0P0000NIOL</ID>
+    # <Type>Stock</Type>
+    # <Ticker>533143</Ticker>
+    # <Description>Reliance Broadcast Network Ltd</Description>
+    # <Exchange>BSE</Exchange>
+    # </Table>
+    if r is not None:
+      stockDict = xmltodict.parse(r.text) # '{"QuoteData": {"Table": {"ID":"0P0000BI86", "Type":, "Ticker":, "Description":, "Exchange":}}}'
+      jsonResponse = {} 
+      if filter:
+         rootKey = "StockList"
+         tickerKey = "ShortName"
+         descKey = "ScripName"
+         isinKey = "ISIN"
+         ratingKey = "STARRATING"
+      else:
+         rootKey = "QuoteData"
+         tickerKey = "Ticker"
+         descKey = "Description"
+         isinKey = "Ticker"
+         ratingKey = "STARRATING"
+      tables = stockDict[rootKey]["Table"]
+      if not isinstance(tables, list):
+         tables = [tables]
+      for table in tables:
+        if table[tickerKey].startswith(term.upper()) or table[tickerKey].endswith(term.upper()):
+          jsonResponse =  {"fundShareClassId": table["ID"],
+                "LegalName": table[descKey],
+                "Universe": "E0" + table["Exchange"],
+                "TenforeId": table[isinKey],
+                "StarRating": table[ratingKey] if ratingKey in table.keys() else "-"
+                }
+      if jsonResponse != {}:
+        search_results = [jsonResponse]
+  except Exception as e:
+     default_logger().debug(e, exc_info=True)
+     pass
+  return search_results
+
 def token_chart(proxies={}):
   """
   This function will scrape the Bearer Token needed to access MS API chart data
