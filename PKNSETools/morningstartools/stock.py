@@ -355,7 +355,7 @@ class Stock(Security):
         
         return self.GetData("ownership/v1", url_suffixe= f"ConcentratedOwners/institution/{top}/data")
     
-    def institutionOwnership(self, top=50):
+    def institutionOwnership(self, top=5):
         """
         This function retrieves the main institutions which own the stock.
 
@@ -464,7 +464,7 @@ class Stock(Security):
         
         return self.GetData("ownership/v1", url_suffixe= f"ConcentratedOwners/mutualfund/{top}/data")
     
-    def mutualFundOwnership(self, top=50):
+    def mutualFundOwnership(self, top=5):
         """
         This function retrieves the main mutual funds which own the stock.
 
