@@ -56,9 +56,13 @@ class morningstarDataFetcher(fetcher):
             output.drop_duplicates(subset=['name'], keep='last',inplace=True)
             output = output.head(100)
             output["Stock"] = output["name"]
-            output.loc[:, "Stock"] = output.loc[:, "Stock"].apply(
-                        lambda x: Stock(x).ticker
-                    )
+            try:
+                output.loc[:, "Stock"] = output.loc[:, "Stock"].apply(
+                            lambda x: Stock(x).ticker
+                        )
+            except ValueError as e:
+                default_logger().debug(e, exc_info=True)
+                pass
             output.rename(
                 columns={
                     "name": f"Name",
@@ -208,9 +212,13 @@ class morningstarDataFetcher(fetcher):
                         lambda x: (colorText.GREEN if float(x) > 0 else colorText.FAIL)+ str("{:.2f}".format(float(x)/1000000)).replace("nan","-")+ "M" + colorText.END
                     )
             output["Stock"] = output["Name"]
-            output.loc[:, "Stock"] = output.loc[:, "Stock"].apply(
-                        lambda x: Stock(x).ticker
-                    )
+            try:
+                output.loc[:, "Stock"] = output.loc[:, "Stock"].apply(
+                            lambda x: Stock(x).ticker
+                        )
+            except ValueError as e:
+                default_logger().debug(e, exc_info=True)
+                pass
             # output.rename(
             #     columns={
             #         "Name": f"Stock",
@@ -254,9 +262,13 @@ class morningstarDataFetcher(fetcher):
             output = output[["name","exchangeId","sectorId","industryId","closePrice","gbrReturnM0","gbrReturnD1","gbrReturnW1","gbrReturnM1","gbrReturnM3","gbrReturnM6","gbrReturnM12","gbrReturnM36","gbrReturnM60","gbrReturnM120","marketCap","dividendYield","peRatio","quantitativeStarRating","equityStyleBox","revenueGrowth3Y","debtEquityRatio","netMargin","roattm","roettm","PEGRatio"]]
             output = output.head(100)
             output["Stock"] = output["name"]
-            output.loc[:, "Stock"] = output.loc[:, "Stock"].apply(
-                        lambda x: Stock(x).ticker
-                    )
+            try:
+                output.loc[:, "Stock"] = output.loc[:, "Stock"].apply(
+                            lambda x: Stock(x).ticker
+                        )
+            except ValueError as e:
+                default_logger().debug(e, exc_info=True)
+                pass
             output.rename(
                 columns={
                     "name": f"Name",

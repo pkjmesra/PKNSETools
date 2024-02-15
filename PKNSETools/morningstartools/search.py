@@ -431,7 +431,8 @@ def search_stock_autocomplete(term,filter=False):
     # </Table>
     if r is not None:
       stockDict = xmltodict.parse(r.text) # '{"QuoteData": {"Table": {"ID":"0P0000BI86", "Type":, "Ticker":, "Description":, "Exchange":}}}'
-      jsonResponse = {} 
+      jsonResponseNSE = {}
+      jsonResponseBSE = {}
       if filter:
          rootKey = "StockList"
          tickerKey = "ShortName"
@@ -447,20 +448,34 @@ def search_stock_autocomplete(term,filter=False):
       tables = stockDict[rootKey]["Table"]
       if not isinstance(tables, list):
          tables = [tables]
+      possibleFindInBSE = False
       for table in tables:
         tickerCondition = (table[tickerKey] == term.upper())
         nameCondition = (term.upper() == table[descKey].upper()) or (len(term.split(" ")) > 0 and term.upper() in table[descKey].upper())
-        exchangeCondition = (table["Exchange"] == "NSE")
-        if tickerCondition or (nameCondition and exchangeCondition):
-          jsonResponse =  {"fundShareClassId": table["ID"],
+        nseExchangeCondition = (table["Exchange"] == "NSE")
+        bseExchangeCondition = (table["Exchange"] == "BSE")
+        if (tickerCondition and bseExchangeCondition) or (nameCondition and bseExchangeCondition):
+           possibleFindInBSE = True
+        if tickerCondition or (nameCondition and nseExchangeCondition):
+          jsonResponseNSE =  {"fundShareClassId": table["ID"],
                 "LegalName": table[descKey],
                 "Universe": "E0" + table["Exchange"],
                 "TenforeId": table[isinKey],
                 "Ticker": table[tickerKey],
                 "StarRating": table[ratingKey] if ratingKey in table.keys() else "-"
                 }
-      if jsonResponse != {}:
-        search_results = [jsonResponse]
+        if possibleFindInBSE:
+           jsonResponseBSE =  {"fundShareClassId": table["ID"],
+                "LegalName": table[descKey],
+                "Universe": "E0" + table["Exchange"],
+                "TenforeId": table[isinKey],
+                "Ticker": f"{table['Exchange']}:{table[tickerKey]}",
+                "StarRating": table[ratingKey] if ratingKey in table.keys() else "-"
+                }
+      if jsonResponseNSE != {}:
+        search_results = [jsonResponseNSE]
+      elif jsonResponseBSE != {}:
+        search_results = [jsonResponseBSE]
   except Exception as e:
      default_logger().debug(e, exc_info=True)
      pass
