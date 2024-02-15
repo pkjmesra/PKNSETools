@@ -66,7 +66,6 @@ class Stock(Security):
             "locale" :"en",
             "languageId": "en",
             "clientId":"RSIN_SAL",
-            "component":"sal-price-fairvalue",
             "version":"4.13.0",
             "access_token":"OAg7sEUU8PQ1V8pyXApDCAyzuxqr",
             }
@@ -372,12 +371,15 @@ class Stock(Security):
         
         if not isinstance(top, int):
             raise TypeError('top parameter should be an integer')
-        
+        params = {"component":"sal-ownership"}
+        params = self.defaultParams | params
         try:
-            r = self.GetData("ownership/v1", url_suffixe= f"OwnershipData/institution/{top}/data", params=self.defaultParams, headers=self.defaultHeaders)
+            r = self.GetData("ownership/v1", url_suffixe= f"OwnershipData/institution/{top}/data", params=params, headers=self.defaultHeaders)
         except ConnectionError as e:
             default_logger().debug(f"{e}:\n{self.term}:Going to retrieve/reset the cookies and meta tags!",exc_info=True)
             self.refreshMorningstarTokens(self.defaultParams, self.defaultHeaders)
+            params = {"component":"sal-ownership"}
+            params = self.defaultParams | params
             r = self.GetData("ownership/v1", url_suffixe= f"OwnershipData/institution/{top}/data", params=self.defaultParams, headers=self.defaultHeaders)
         return r
     
@@ -478,12 +480,15 @@ class Stock(Security):
         
         if not isinstance(top, int):
             raise TypeError('top parameter should be an integer')
-        
+        params = {"component":"sal-ownership"}
+        params = self.defaultParams | params
         try:
-            r = self.GetData("ownership/v1", url_suffixe= f"OwnershipData/mutualfund/{top}/data", params=self.defaultParams, headers=self.defaultHeaders)
+            r = self.GetData("ownership/v1", url_suffixe= f"OwnershipData/mutualfund/{top}/data", params=params, headers=self.defaultHeaders)
         except ConnectionError as e:
             default_logger().debug(f"{e}:\n{self.term}:Going to retrieve/reset the cookies and meta tags!",exc_info=True)
             self.refreshMorningstarTokens(self.defaultParams, self.defaultHeaders)
+            params = {"component":"sal-ownership"}
+            params = self.defaultParams | params
             r = self.GetData("ownership/v1", url_suffixe= f"OwnershipData/mutualfund/{top}/data", params=self.defaultParams, headers=self.defaultHeaders)
         return r
     
@@ -624,7 +629,8 @@ class Stock(Security):
             >>> Stock("visa", exchange="nyse").fairValue()
   
         """
-        params = self.defaultParams
+        params = {"component":"sal-price-fairvalue"}
+        params = self.defaultParams | params
         headers = self.defaultHeaders
         try:
             r = self.GetData("priceFairValue/v3", params=params, url_suffixe= f"data", headers=headers)
@@ -632,6 +638,8 @@ class Stock(Security):
         except ConnectionError as e:
             default_logger().debug(f"{e}:\n{self.term}:Going to retrieve/reset the cookies and meta tags!",exc_info=True)
             self.refreshMorningstarTokens(params, headers)
+            params = {"component":"sal-price-fairvalue"}
+            params = self.defaultParams | params
             r = self.GetData("priceFairValue/v3", params=params, url_suffixe= f"data", headers=headers)
         return r
 
@@ -664,16 +672,20 @@ class Stock(Security):
 # stockName = "BANKINDIA"
 # combined_pd = None
 # stk = Stock(stockName)
-# R = stk.mutualFundSellers(top=50)
-# d = stk.changeData(R)
-# combined_pd = d
-# print(f"mutualFundSellers:\n{d}")
-# d.to_csv("mutualFundSellers.csv")
 # R = stk.mutualFundOwnership(top=50)
 # d = stk.changeData(R)
-# combined_pd = pd.concat([combined_pd, d], axis=0)
 # print(f"mutualFundOwnership:\n{d}")
-# d.to_csv("mutualFundOwnership.csv")
+# R = stk.institutionOwnership(top=50)
+# d = stk.changeData(R)
+# print(f"institutionOwnership:\n{d}")
+
+# fv = stk.fairValue()
+# print(fv["chart"]["chartDatums"]["recent"]["latestFairValue"])
+
+# R = stk.mutualFundSellers(top=50)
+# d = stk.changeData(R)
+# print(f"mutualFundSellers:\n{d}")
+# d.to_csv("mutualFundSellers.csv")
 # R = stk.mutualFundConcentratedOwners(top=50)
 # d = stk.changeData(R)
 # combined_pd = pd.concat([combined_pd, d], axis=0)
@@ -690,11 +702,6 @@ class Stock(Security):
 # combined_pd = pd.concat([combined_pd, d], axis=0)
 # print(f"institutionSellers:\n{d}")
 # d.to_csv("institutionSellers.csv")
-# R = stk.institutionOwnership(top=50)
-# d = stk.changeData(R)
-# combined_pd = pd.concat([combined_pd, d], axis=0)
-# print(f"institutionOwnership:\n{d}")
-# d.to_csv("institutionOwnership.csv")
 # R = stk.institutionConcentratedOwners(top=50)
 # d = stk.changeData(R)
 # combined_pd = pd.concat([combined_pd, d], axis=0)
@@ -709,5 +716,3 @@ class Stock(Security):
 # combined_pd.drop_duplicates(inplace=True)
 # combined_pd.to_csv("combined.csv")
 
-# fv = stk.fairValue()
-# print(fv["chart"]["chartDatums"]["recent"]["latestFairValue"])

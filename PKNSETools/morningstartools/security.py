@@ -83,6 +83,9 @@ class Security:
 
         self.proxies = proxies
         self.fetcher = fetcher()
+        self.defaultHeaders = {}
+        self.defaultParams = {}
+        self.defaultCookies = None
         self.term = term
         if country:
             self.site = SITE[country.lower()]["site"]
@@ -186,15 +189,17 @@ class Security:
 
 
         #headers
-        default_headers = {
-            "apikey" : APIKEY,
-        }
+        # default_headers = {
+        #     "apikey" : APIKEY,
+        # }
 
-        all_headers = default_headers | headers
-        
+        # all_headers = headers | self.defaultHeaders # default_headers
+        # params = params | self.defaultParams
+        if self.defaultCookies is not None:
+            self.fetcher.session.cookies.update(self.defaultCookies)
 
         # response = requests.get(url,params=params, headers=all_headers,proxies=self.proxies)
-        response = self.fetcher.fetchURL(url,headers=all_headers,params=params)
+        response = self.fetcher.fetchURL(url,headers=headers,params=params)
 
         not_200_response(url,response)
 
