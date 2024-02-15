@@ -12,7 +12,7 @@ import pandas as pd
 from PKDevTools.classes.ColorText import colorText
 from PKDevTools.classes.Fetcher import fetcher
 from PKDevTools.classes.log import default_logger
-
+from PKNSETools.morningstartools.stock import Stock
 # This Class Handles Fetching of Stock Data over the internet from NSE/BSE
 
 class morningstarDataFetcher(fetcher):
@@ -28,7 +28,8 @@ class morningstarDataFetcher(fetcher):
             for row in rows:
                 df_row = pd.DataFrame([row], columns=["name", "marketCap","exchangeId", "dividendYield", "closePrice","peRatio"])
                 output = pd.concat([output, df_row], ignore_index=True)
-            
+            output.sort_values(by=["dividendYield"],ascending=False,inplace=True)
+            output = output.head(100)
             output.loc[:, "name"] = output.loc[:, "name"].apply(
                         lambda x: " ".join(x.split(" ")[:6]).replace("Ordinary Shares","").replace("Shs Dematerialised","")
                     )
@@ -53,9 +54,14 @@ class morningstarDataFetcher(fetcher):
                         lambda x: colorText.FAIL + ("BSE" if (x == "EX$$$$XBOM" or "BOM" in x) else "NSE") + colorText.END
                     )
             output.drop_duplicates(subset=['name'], keep='last',inplace=True)
+            output = output.head(100)
+            output["Stock"] = output["name"]
+            output.loc[:, "Stock"] = output.loc[:, "Stock"].apply(
+                        lambda x: Stock(x).ticker
+                    )
             output.rename(
                 columns={
-                    "name": f"Stock",
+                    "name": f"Name",
                     "marketCap": f"Market Cap. (Cr)",
                     "exchangeId": f"Exchange",
                     "dividendYield": f"Dividend (%)",
@@ -169,6 +175,11 @@ class morningstarDataFetcher(fetcher):
             output.drop_duplicates(subset=['Name'], keep='last',inplace=True)
             output = output.dropna()
             output = output.drop('Unnamed: 0', axis=1)
+            if sortby == "NoOfFunds":
+                output.sort_values(by=["No Of  Funds"],ascending=False,inplace=True)
+            elif sortby == "ChangeInShares":
+                output.sort_values(by=["Change  In Shares"],ascending=False,inplace=True)
+            output = output.head(100)
             output.loc[:, "Name"] = output.loc[:, "Name"].apply(
                         lambda x: " ".join(x.split(" ")[:6]).replace("Ordinary Shares","").replace("Shs Dematerialised","")
                     )
@@ -196,12 +207,16 @@ class morningstarDataFetcher(fetcher):
             output.loc[:, "Change  In Shares"] = output.loc[:, "Change  In Shares"].apply(
                         lambda x: (colorText.GREEN if float(x) > 0 else colorText.FAIL)+ str("{:.2f}".format(float(x)/1000000)).replace("nan","-")+ "M" + colorText.END
                     )
-            output.rename(
-                columns={
-                    "Name": f"Stock",
-                },
-                inplace=True,
-            )
+            output["Stock"] = output["Name"]
+            output.loc[:, "Stock"] = output.loc[:, "Stock"].apply(
+                        lambda x: Stock(x).ticker
+                    )
+            # output.rename(
+            #     columns={
+            #         "Name": f"Stock",
+            #     },
+            #     inplace=True,
+            # )
             output.set_index("Stock", inplace=True)
             return output
         except Exception as e:
@@ -237,9 +252,14 @@ class morningstarDataFetcher(fetcher):
                 output = pd.concat([output, df_row[0]], ignore_index=True)
             output.drop_duplicates(subset=['name'], keep='first',inplace=True)
             output = output[["name","exchangeId","sectorId","industryId","closePrice","gbrReturnM0","gbrReturnD1","gbrReturnW1","gbrReturnM1","gbrReturnM3","gbrReturnM6","gbrReturnM12","gbrReturnM36","gbrReturnM60","gbrReturnM120","marketCap","dividendYield","peRatio","quantitativeStarRating","equityStyleBox","revenueGrowth3Y","debtEquityRatio","netMargin","roattm","roettm","PEGRatio"]]
+            output = output.head(100)
+            output["Stock"] = output["name"]
+            output.loc[:, "Stock"] = output.loc[:, "Stock"].apply(
+                        lambda x: Stock(x).ticker
+                    )
             output.rename(
                 columns={
-                    "name": f"Stock",
+                    "name": f"Name",
                     # "marketCap": f"Market Cap. (Cr)",
                     # "exchangeId": f"Exchange",
                     # "dividendYield": f"Dividend (%)",

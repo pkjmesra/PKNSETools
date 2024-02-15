@@ -449,7 +449,7 @@ def search_stock_autocomplete(term,filter=False):
          tables = [tables]
       for table in tables:
         tickerCondition = (table[tickerKey] == term.upper())
-        nameCondition = (term.upper() == table[descKey].upper())
+        nameCondition = (term.upper() == table[descKey].upper()) or (len(term.split(" ")) > 0 and term.upper() in table[descKey].upper())
         exchangeCondition = (table["Exchange"] == "NSE")
         if tickerCondition or (nameCondition and exchangeCondition):
           jsonResponse =  {"fundShareClassId": table["ID"],
