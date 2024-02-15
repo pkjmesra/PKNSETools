@@ -25,6 +25,7 @@
 import json
 import re
 import xmltodict
+import urllib
 
 import requests
 from bs4 import BeautifulSoup
@@ -401,7 +402,7 @@ def search_stock(term,field,exchange, pageSize =10,currency ='INR', filters={}, 
 def search_stock_autocomplete(term,filter=False):
   search_results = []
   try:
-    r = requests.get(f"https://morningstar.in/handlers/autocompletehandler.ashx?criteria={term}{'&sender=sm' if filter else ''}")
+    r = requests.get(f"https://morningstar.in/handlers/autocompletehandler.ashx?criteria={urllib.parse.quote(term)}{'&sender=sm' if filter else ''}")
     # with sender=sm
     # <StockList xmlns="" Criteria="RELIANCE">
     # <Table>
@@ -447,11 +448,15 @@ def search_stock_autocomplete(term,filter=False):
       if not isinstance(tables, list):
          tables = [tables]
       for table in tables:
-        if table[tickerKey] == term.upper():
+        tickerCondition = (table[tickerKey] == term.upper())
+        nameCondition = (term.upper() == table[descKey].upper())
+        exchangeCondition = (table["Exchange"] == "NSE")
+        if tickerCondition or (nameCondition and exchangeCondition):
           jsonResponse =  {"fundShareClassId": table["ID"],
                 "LegalName": table[descKey],
                 "Universe": "E0" + table["Exchange"],
                 "TenforeId": table[isinKey],
+                "Ticker": table[tickerKey],
                 "StarRating": table[ratingKey] if ratingKey in table.keys() else "-"
                 }
       if jsonResponse != {}:

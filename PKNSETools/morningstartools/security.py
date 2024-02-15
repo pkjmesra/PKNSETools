@@ -87,6 +87,7 @@ class Security:
         self.defaultParams = {}
         self.defaultCookies = None
         self.term = term
+        self.ticker = self.term
         if country:
             self.site = SITE[country.lower()]["site"]
         else:
@@ -110,6 +111,8 @@ class Security:
             if itemRange < len(code_list):
                 self.code = code_list[itemRange]["fundShareClassId"]
                 self.name = code_list[itemRange]["LegalName"]
+                if "Ticker" in code_list[itemRange]:
+                    self.ticker = code_list[itemRange]["Ticker"]
                 if "TenforeId" in code_list[itemRange]:
                     tenforeId = code_list[itemRange]["TenforeId"]
                     regex = re.compile("[0-9]*\.[0-9]\.")
