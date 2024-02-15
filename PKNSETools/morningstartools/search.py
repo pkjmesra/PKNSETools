@@ -447,7 +447,7 @@ def search_stock_autocomplete(term,filter=False):
       if not isinstance(tables, list):
          tables = [tables]
       for table in tables:
-        if table[tickerKey].startswith(term.upper()[:7]):
+        if table[tickerKey] == term.upper():
           jsonResponse =  {"fundShareClassId": table["ID"],
                 "LegalName": table[descKey],
                 "Universe": "E0" + table["Exchange"],
