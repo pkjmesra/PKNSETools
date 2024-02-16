@@ -30,6 +30,8 @@ from PKDevTools.classes.CookieHelper import CookieHelper
 from PKDevTools.classes import Archiver
 from PKDevTools.classes.Fetcher import session
 from PKDevTools.classes.log import default_logger
+from PKNSETools.morningstartools.NSEStockMFIDB import NSEStockMFIDB
+from PKNSETools.morningstartools.NSEStockFairValueDB import NSEStockFairValueDB
 
 class Stock(Security):
     """
@@ -371,6 +373,9 @@ class Stock(Security):
         
         if not isinstance(top, int):
             raise TypeError('top parameter should be an integer')
+        r = NSEStockMFIDB().searchCache(ticker=self.ticker)
+        if r is not None and len(r) > 0 and "FII" in r.keys():
+            return r["FII"]
         params = {"component":"sal-ownership"}
         params = self.defaultParams | params
         try:
@@ -381,6 +386,8 @@ class Stock(Security):
             params = {"component":"sal-ownership"}
             params = self.defaultParams | params
             r = self.GetData("ownership/v1", url_suffixe= f"OwnershipData/institution/{top}/data", params=self.defaultParams, headers=self.defaultHeaders)
+        if r is not None and len(r) > 0 and len(r["rows"]) > 0:
+            NSEStockMFIDB().saveCache(ticker=self.ticker, stockDict={"FII":r})
         return r
     
     def institutionSellers(self, top=50):
@@ -480,6 +487,9 @@ class Stock(Security):
         
         if not isinstance(top, int):
             raise TypeError('top parameter should be an integer')
+        r = NSEStockMFIDB().searchCache(ticker=self.ticker)
+        if r is not None and len(r) > 0 and "MF" in r.keys():
+            return r["MF"]
         params = {"component":"sal-ownership"}
         params = self.defaultParams | params
         try:
@@ -490,6 +500,8 @@ class Stock(Security):
             params = {"component":"sal-ownership"}
             params = self.defaultParams | params
             r = self.GetData("ownership/v1", url_suffixe= f"OwnershipData/mutualfund/{top}/data", params=self.defaultParams, headers=self.defaultHeaders)
+        if r is not None and len(r) > 0 and len(r["rows"]) > 0:
+            NSEStockMFIDB().saveCache(ticker=self.ticker, stockDict={"MF":r})
         return r
     
     def mutualFundSellers(self, top=50):
@@ -629,6 +641,9 @@ class Stock(Security):
             >>> Stock("visa", exchange="nyse").fairValue()
   
         """
+        r = NSEStockFairValueDB().searchCache(ticker=self.ticker)
+        if r is not None and len(r) > 0:
+            return r
         params = {"component":"sal-price-fairvalue"}
         params = self.defaultParams | params
         headers = self.defaultHeaders
@@ -641,6 +656,8 @@ class Stock(Security):
             params = {"component":"sal-price-fairvalue"}
             params = self.defaultParams | params
             r = self.GetData("priceFairValue/v3", params=params, url_suffixe= f"data", headers=headers)
+        if r is not None and len(r) > 0:
+            NSEStockFairValueDB().saveCache(ticker=self.ticker, stockDict=r)
         return r
 
     def refreshMorningstarTokens(self, params, headers):
@@ -660,7 +677,7 @@ class Stock(Security):
         self.defaultHeaders = headers
         self.defaultParams = params
         
-    def changeData(self, rows=None, sortKey="date"):
+    def mutualFundFIIChangeData(self, rows=None, sortKey="date"):
         if rows is None or len(rows) < 1 or len(rows["rows"]) < 1:
             return None
         d = pd.DataFrame(rows["rows"])
