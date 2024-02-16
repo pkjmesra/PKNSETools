@@ -22,9 +22,7 @@
     SOFTWARE.
 
 """
-# import PKNSETools.morningstartools
-# __package__ = 'PKNSETools.morningstartools'
-from .security import Security
+from PKNSETools.morningstartools.security import Security
 import pandas as pd
 from PKDevTools.classes.CookieHelper import CookieHelper
 from PKDevTools.classes import Archiver
@@ -685,20 +683,20 @@ class Stock(Security):
         if (d is not None and len(d) > 0):
             d.sort_values(by=[sortKey], ascending=False, inplace=True)
         return d
+    
+# stocks =["BANKINDIA","RELIANCE","SBIN"]
+# for stockName in stocks:
+#     stk = Stock(stockName)
+#     R = stk.mutualFundOwnership(top=5)
+#     # d = stk.changeData(R)
+#     # print(f"mutualFundOwnership:\n{d}")
+#     R = stk.institutionOwnership(top=5)
+#     # d = stk.changeData(R)
+#     # print(f"institutionOwnership:\n{d}")
 
-# stockName = "Reliance Industries Ltd"
-# combined_pd = None
-# stk = Stock(stockName)
-# R = stk.mutualFundOwnership(top=50)
-# d = stk.changeData(R)
-# print(f"mutualFundOwnership:\n{d}")
-# R = stk.institutionOwnership(top=50)
-# d = stk.changeData(R)
-# print(f"institutionOwnership:\n{d}")
-
-# fv = stk.fairValue()
-# print(fv["chart"]["chartDatums"]["recent"]["latestFairValue"])
-
+#     fv = stk.fairValue()
+#     print(fv["chart"]["chartDatums"]["recent"]["latestFairValue"])
+# print("done")
 # R = stk.mutualFundSellers(top=50)
 # d = stk.changeData(R)
 # print(f"mutualFundSellers:\n{d}")

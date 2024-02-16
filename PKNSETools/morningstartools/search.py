@@ -30,8 +30,8 @@ import urllib
 import requests
 from bs4 import BeautifulSoup
 
-from .error import not_200_response
-from .utils import (ASSET_TYPE, EXCHANGE, FIELDS, FILTER_FUND, FILTER_STOCK,
+from PKNSETools.morningstartools.error import not_200_response
+from PKNSETools.morningstartools.utils import (ASSET_TYPE, EXCHANGE, FIELDS, FILTER_FUND, FILTER_STOCK,
                     SITE, random_user_agent)
 
 from PKDevTools.classes.log import default_logger

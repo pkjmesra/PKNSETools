@@ -28,9 +28,9 @@ import re
 
 import requests
 
-from .error import not_200_response
-from .search import search_funds, search_stock, token_chart
-from .utils import APIKEY, SITE, random_user_agent
+from PKNSETools.morningstartools.error import not_200_response
+from PKNSETools.morningstartools.search import search_funds, search_stock, token_chart
+from PKNSETools.morningstartools.utils import APIKEY, SITE, random_user_agent
 from PKDevTools.classes.Fetcher import fetcher
 
 #with Universe field, we can detect the asset class
