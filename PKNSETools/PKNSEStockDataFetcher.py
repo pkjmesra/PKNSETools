@@ -39,6 +39,7 @@ from PKDevTools.classes.Fetcher import fetcher
 from PKDevTools.classes.log import default_logger
 
 from PKNSETools.Benny.NSE import NSE
+from PKNSETools.morningstartools.utils import random_user_agent
 
 # This Class Handles Fetching of Stock Data over the internet from NSE/BSE
 
@@ -156,7 +157,7 @@ class nseStockDataFetcher(fetcher):
 
     def savedholidaysRaw(self, exchange="NSE"):
         url = "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/.github/dependencies/nse-holidays.json"
-        headers = {"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36"}
+        headers = {"user-agent": random_user_agent()}
         res = self.fetchURL(url,headers=headers)
         if res is None or res.status_code != 200:
             return [], []

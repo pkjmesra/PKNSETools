@@ -35,6 +35,7 @@ from .utils import (ASSET_TYPE, EXCHANGE, FIELDS, FILTER_FUND, FILTER_STOCK,
                     SITE, random_user_agent)
 
 from PKDevTools.classes.log import default_logger
+from PKNSETools.morningstartools.NSEStockDB import NSEStockDB
 
 def filter_universe(field = FILTER_FUND, proxies = {}):
   """
@@ -394,13 +395,19 @@ def search_stock(term,field,exchange, pageSize =10,currency ='INR', filters={}, 
   result = general_search(params, proxies=proxies)
 
   if result['rows']:
+    if len(result['rows']) > 0:
+      NSEStockDB().saveCache(ticker=term, stockDict=result['rows'][0])
     return result['rows']
   else:
     default_logger().debug(f'0 stock found with the term {term}')
     return {}
 
 def search_stock_autocomplete(term,filter=False):
+  term = term.replace("*","").strip().upper()
   search_results = []
+  cachedData = NSEStockDB().searchCache(ticker=term)
+  if cachedData is not None:
+     return [cachedData]
   try:
     r = requests.get(f"https://morningstar.in/handlers/autocompletehandler.ashx?criteria={urllib.parse.quote(term)}{'&sender=sm' if filter else ''}")
     # with sender=sm
@@ -451,7 +458,7 @@ def search_stock_autocomplete(term,filter=False):
       possibleFindInBSE = False
       for table in tables:
         tickerCondition = (table[tickerKey] == term.upper())
-        nameCondition = (term.upper() == table[descKey].upper()) or (len(term.split(" ")) > 0 and term.upper() in table[descKey].upper())
+        nameCondition = "(" not in table[descKey] and "*" not in table[descKey] and (term.upper() == table[descKey].upper()) or (len(term.split(" ")) > 0 and term.upper() in table[descKey].upper())
         nseExchangeCondition = (table["Exchange"] == "NSE")
         bseExchangeCondition = (table["Exchange"] == "BSE")
         if (tickerCondition and bseExchangeCondition) or (nameCondition and bseExchangeCondition):
@@ -474,7 +481,9 @@ def search_stock_autocomplete(term,filter=False):
                 }
       if jsonResponseNSE != {}:
         search_results = [jsonResponseNSE]
+        NSEStockDB().saveCache(ticker=term, stockDict=jsonResponseNSE)
       elif jsonResponseBSE != {}:
+        NSEStockDB().saveCache(ticker=term, stockDict=jsonResponseNSE)
         search_results = [jsonResponseBSE]
   except Exception as e:
      default_logger().debug(e, exc_info=True)

@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+# -*- coding: utf-8 -*-
 """
     The MIT License (MIT)
 
@@ -23,23 +23,16 @@
     SOFTWARE.
 
 """
-from PKNSETools.morningstartools.utils import random_user_agent
+from PKDevTools.classes.Singleton import SingletonType, SingletonMixin
+from PKDevTools.classes.PKPickler import PKPicklerDB
 
-_base_domain = 'https://www.nseindia.com'
-_autoComplete_url_path = '/api/search/autocomplete?q={}'
-_quote_url_path= '/api/quote-equity?symbol={}'
-_daily_report_url_path = '/api/merged-daily-reports?key=favCapital'
-_quote_url_path_html = '/get-quotes/equity?symbol={}'
-_historical_company_data_url_path_html = '/api/historical/cm/equity?symbol={}'
-_historical_company_data_url_path = '/api/historical/cm/equity?symbol={}&series=[%22EQ%22]&from={}&to={}&csv=true'
-_historical_index_data_url_path = '/api/historical/indicesHistory?indexType={}&from={}&to={}'
-_chart_data_preopen_url = '/api/chart-databyindex?index={}&preopen=true'
-_chart_data_open_url = '/api/chart-databyindex?index={}'
-_chart_data_index_preopen_url='/api/chart-databyindex?index={}&indices=true&preopen=true'
-_chart_data_index_open_url='/api/chart-databyindex?index={}&indices=true'
-_headers = {
-    "user-agent": random_user_agent()
-}
-_head = {
-    "user-agent": random_user_agent()
-}
+class NSEStockDB(SingletonMixin, metaclass=SingletonType):
+    def __init__(self):
+        super(NSEStockDB, self).__init__()
+        self.pickler = PKPicklerDB(fileName=f"{self.__class__.__name__}.pkl")
+
+    def searchCache(self, ticker:str=None, name:str=None):
+        return self.pickler.searchCache(ticker=ticker, name=name)
+    
+    def saveCache(self, ticker:str=None, name:str=None, stockDict:dict=None):
+        self.pickler.saveCache(ticker=ticker, name=name, stockDict=stockDict)

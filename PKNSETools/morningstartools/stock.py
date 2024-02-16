@@ -669,7 +669,7 @@ class Stock(Security):
             d.sort_values(by=[sortKey], ascending=False, inplace=True)
         return d
 
-# stockName = "Reliance Industries Ltd"
+# stockName = "BANKINDIA"
 # combined_pd = None
 # stk = Stock(stockName)
 # R = stk.mutualFundOwnership(top=50)

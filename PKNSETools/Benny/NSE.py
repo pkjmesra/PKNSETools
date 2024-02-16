@@ -33,6 +33,7 @@ from datetime import datetime
 from zipfile import ZipFile
 from mthrottle import Throttle
 from PKDevTools.classes.Fetcher import fetcher, session
+from PKNSETools.morningstartools.utils import random_user_agent
 
 throttleConfig = {
     'default': {
@@ -75,7 +76,7 @@ class NSE:
     def __init__(self, download_folder: Union[str, Path]):
         '''Initialise NSE'''
 
-        uAgent = 'Mozilla/5.0 (Windows NT 10.0; rv:109.0) Gecko/20100101 Firefox/118.0'
+        uAgent = random_user_agent()
 
         self.default_headers = {
             'User-Agent': uAgent,

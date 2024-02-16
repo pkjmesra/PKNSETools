@@ -13,6 +13,7 @@ from PKDevTools.classes.ColorText import colorText
 from PKDevTools.classes.Fetcher import fetcher
 from PKDevTools.classes.log import default_logger
 from PKNSETools.morningstartools.stock import Stock
+from PKNSETools.morningstartools.utils import random_user_agent
 # This Class Handles Fetching of Stock Data over the internet from NSE/BSE
 
 class morningstarDataFetcher(fetcher):
@@ -135,7 +136,7 @@ class morningstarDataFetcher(fetcher):
             'sec-fetch-site': 'same-origin',
             'traceparent': '00-92c28e8266380d037f962d015e556500-77eea725bcce4045-01',
             'tracestate': '35894@nr=0-1-1526825-1386023881-77eea725bcce4045----1702240543645',
-            'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'user-agent': random_user_agent(),
             'x-microsoftajax': 'Delta=true',
             'x-newrelic-id': 'VQMFV15RDRABV1ZVAAEBUlUG',
             'x-requested-with': 'XMLHttpRequest',
