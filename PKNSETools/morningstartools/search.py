@@ -458,7 +458,7 @@ def search_stock_autocomplete(term,filter=False):
       possibleFindInBSE = False
       for table in tables:
         tickerCondition = (table[tickerKey] == term.upper())
-        nameCondition = "(" not in table[descKey] and "*" not in table[descKey] and (term.upper() == table[descKey].upper()) or (len(term.split(" ")) > 0 and term.upper() in table[descKey].upper())
+        nameCondition = ("(" not in table[descKey] and "*" not in table[descKey]) and ((term.upper() == table[descKey].upper()) or (len(term.split(" ")) > 0 and term.upper() in table[descKey].upper()))
         nseExchangeCondition = (table["Exchange"] == "NSE")
         bseExchangeCondition = (table["Exchange"] == "BSE")
         if (tickerCondition and bseExchangeCondition) or (nameCondition and bseExchangeCondition):
