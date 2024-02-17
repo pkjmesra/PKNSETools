@@ -23,7 +23,6 @@
     SOFTWARE.
 
 """
-import threading
 from PKDevTools.classes.Singleton import SingletonType, SingletonMixin
 from PKDevTools.classes.PKPickler import PKPicklerDB
 
@@ -31,12 +30,9 @@ class NSEStockFairValueDB(SingletonMixin, metaclass=SingletonType):
     def __init__(self):
         super(NSEStockFairValueDB, self).__init__()
         self.pickler = PKPicklerDB(fileName=f"{self.__class__.__name__}.pkl")
-        self.lock = threading.Lock()
 
     def searchCache(self, ticker:str=None, name:str=None):
-        with self.lock:
-            return self.pickler.searchCache(ticker=ticker, name=name)
+        return self.pickler.searchCache(ticker=ticker, name=name)
     
     def saveCache(self, ticker:str=None, name:str=None, stockDict:dict=None):
-        with self.lock:
-            self.pickler.saveCache(ticker=ticker, name=name, stockDict=stockDict)
+        self.pickler.saveCache(ticker=ticker, name=name, stockDict=stockDict)
