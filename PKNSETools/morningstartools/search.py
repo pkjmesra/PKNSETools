@@ -452,7 +452,7 @@ def search_stock_autocomplete(term,filter=False):
          descKey = "Description"
          isinKey = "Ticker"
          ratingKey = "STARRATING"
-      if rootKey not in stockDict.keys() or "Table" not in stockDict.keys():
+      if rootKey not in stockDict.keys() or stockDict[rootKey] is None or "Table" not in stockDict[rootKey].keys():
          return search_results
       tables = stockDict[rootKey]["Table"]
       if not isinstance(tables, list):

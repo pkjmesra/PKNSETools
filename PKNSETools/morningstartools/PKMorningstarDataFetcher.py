@@ -233,7 +233,7 @@ class morningstarDataFetcher(fetcher):
             ticker = Stock(ticker).ticker
         except:
             pass
-        return ticker
+        return ticker.split(" ")[0].upper()
     # https://www.morningstar.com/stocks/xnse/idea/ownership
     # https://api-global.morningstar.com/sal-service/v1/stock/ownership/v1/0P0000C2H4/OwnershipData/mutualfund/20/data?languageId=en&locale=en&clientId=MDC&component=sal-ownership&version=4.14.0
     # For each stock: https://api-global.morningstar.com/sal-service/v1/stock/header/v2/data/0P0000N0EO/securityInfo?showStarRating=&languageId=en&locale=en&clientId=RSIN_SAL&component=sal-quote&version=4.13.0&access_token=JrelGdhGkgqeSJhy7BufcEzwN0sb
