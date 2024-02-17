@@ -30,6 +30,7 @@ from PKDevTools.classes.Fetcher import session
 from PKDevTools.classes.log import default_logger
 from PKNSETools.morningstartools.NSEStockMFIDB import NSEStockMFIDB
 from PKNSETools.morningstartools.NSEStockFairValueDB import NSEStockFairValueDB
+from PKDevTools.classes.PKDateUtilities import PKDateUtilities
 
 class Stock(Security):
     """
@@ -371,9 +372,13 @@ class Stock(Security):
         
         if not isinstance(top, int):
             raise TypeError('top parameter should be an integer')
+        r_saved = None
         r = NSEStockMFIDB().searchCache(ticker=self.ticker)
         if r is not None and len(r) > 0 and "FII" in r.keys():
-            return r["FII"]
+            r_saved = r["FII"]
+            # Give the opportunity for the first 2 days to fetch latest end-of-last-month MFI data
+            if PKDateUtilities.currentDateTime().day not in [1,2]:
+                return r_saved
         params = {"component":"sal-ownership"}
         params = self.defaultParams | params
         try:
@@ -386,7 +391,8 @@ class Stock(Security):
             r = self.GetData("ownership/v1", url_suffixe= f"OwnershipData/institution/{top}/data", params=self.defaultParams, headers=self.defaultHeaders)
         if r is not None and len(r) > 0 and len(r["rows"]) > 0:
             NSEStockMFIDB().saveCache(ticker=self.ticker, stockDict={"FII":r})
-        return r
+            r_saved = r
+        return r_saved
     
     def institutionSellers(self, top=50):
         """
@@ -485,9 +491,13 @@ class Stock(Security):
         
         if not isinstance(top, int):
             raise TypeError('top parameter should be an integer')
+        r_saved = None
         r = NSEStockMFIDB().searchCache(ticker=self.ticker)
         if r is not None and len(r) > 0 and "MF" in r.keys():
-            return r["MF"]
+            r_saved = r["MF"]
+            # Give the opportunity for the first 2 days to fetch latest end-of-last-month MFI data
+            if PKDateUtilities.currentDateTime().day not in [1,2]:
+                return r_saved
         params = {"component":"sal-ownership"}
         params = self.defaultParams | params
         try:
@@ -500,7 +510,8 @@ class Stock(Security):
             r = self.GetData("ownership/v1", url_suffixe= f"OwnershipData/mutualfund/{top}/data", params=self.defaultParams, headers=self.defaultHeaders)
         if r is not None and len(r) > 0 and len(r["rows"]) > 0:
             NSEStockMFIDB().saveCache(ticker=self.ticker, stockDict={"MF":r})
-        return r
+            r_saved = r
+        return r_saved
     
     def mutualFundSellers(self, top=50):
         """
