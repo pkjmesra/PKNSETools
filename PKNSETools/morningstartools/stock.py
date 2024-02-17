@@ -701,7 +701,7 @@ class Stock(Security):
             d.sort_values(by=[sortKey], ascending=False, inplace=True)
         return d
 
-# stk = Stock("Taparia Tools Ltd")
+# stk = Stock("CTE")
 # stocks =["BANKINDIA","RELIANCE","SBIN"]
 # for stockName in stocks:
 #     stk = Stock(stockName)

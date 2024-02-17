@@ -460,7 +460,7 @@ def search_stock_autocomplete(term,filter=False):
       possibleFindInBSE = False
       for table in tables:
         tickerCondition = (table[tickerKey] == term.upper())
-        nameCondition = (("(INDIA)" in table[descKey].upper() or "(" not in table[descKey]) and "*" not in table[descKey]) and ((term.upper() == table[descKey].upper()) or (len(term.split(" ")) > 1 and term.upper() in table[descKey].upper() and f"{term.upper().split(" ")[0]} " in table[descKey].upper()))
+        nameCondition = (("(INDIA)" in table[descKey].upper() or "(" not in table[descKey]) and "*" not in table[descKey]) and ((term.upper() == table[descKey].upper()) or (len(term.split(" ")) > 1 and term.upper() in table[descKey].upper() and f'{term.upper().split(" ")[0]} ' in table[descKey].upper()))
         nseExchangeCondition = (table["Exchange"] == "NSE")
         bseExchangeCondition = (table["Exchange"] == "BSE")
         if (tickerCondition and bseExchangeCondition) or (nameCondition and bseExchangeCondition):
@@ -473,6 +473,8 @@ def search_stock_autocomplete(term,filter=False):
                 "Ticker": table[tickerKey],
                 "StarRating": table[ratingKey] if ratingKey in table.keys() else "-"
                 }
+          if tickerCondition and nseExchangeCondition:
+             break
         if possibleFindInBSE:
            jsonResponseBSE =  {"fundShareClassId": table["ID"],
                 "LegalName": table[descKey],
@@ -481,6 +483,8 @@ def search_stock_autocomplete(term,filter=False):
                 "Ticker": f"{table['Exchange']}:{table[tickerKey]}",
                 "StarRating": table[ratingKey] if ratingKey in table.keys() else "-"
                 }
+           if tickerCondition and bseExchangeCondition:
+             break
       if jsonResponseNSE != {}:
         search_results = [jsonResponseNSE]
         NSEStockDB().saveCache(ticker=term, stockDict=jsonResponseNSE)
