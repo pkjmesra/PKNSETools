@@ -485,7 +485,7 @@ def search_stock_autocomplete(term,filter=False):
         search_results = [jsonResponseNSE]
         NSEStockDB().saveCache(ticker=term, stockDict=jsonResponseNSE)
       elif jsonResponseBSE != {}:
-        NSEStockDB().saveCache(ticker=term, stockDict=jsonResponseNSE)
+        NSEStockDB().saveCache(ticker=term, stockDict=jsonResponseBSE)
         search_results = [jsonResponseBSE]
   except Exception as e:
      default_logger().debug(e, exc_info=True)

@@ -700,7 +700,8 @@ class Stock(Security):
         if (d is not None and len(d) > 0):
             d.sort_values(by=[sortKey], ascending=False, inplace=True)
         return d
-    
+
+# stk = Stock("Taparia Tools Ltd")
 # stocks =["BANKINDIA","RELIANCE","SBIN"]
 # for stockName in stocks:
 #     stk = Stock(stockName)
