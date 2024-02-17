@@ -32,6 +32,7 @@ from io import StringIO
 warnings.simplefilter("ignore", DeprecationWarning)
 warnings.simplefilter("ignore", FutureWarning)
 import pandas as pd
+import yfinance as yf
 from PKDevTools.classes import Archiver
 from PKDevTools.classes.ColorText import colorText
 from PKDevTools.classes.PKDateUtilities import PKDateUtilities
@@ -210,20 +211,23 @@ class nseStockDataFetcher(fetcher):
         return cm_holidays, raw
 
     def capitalMarketStatus(self):
-        nse  = NSE(Archiver.get_user_outputs_dir())
-        status = nse.status()
-        marketStatusShort = None
-        marketStatusLong = None
-        tradeDate = None
+        # nse  = NSE(Archiver.get_user_outputs_dir())
+        ticker = yf.Ticker("^NSEI")
+        info = ticker.info
+        md = ticker.get_history_metadata()
+        ctp = md["currentTradingPeriod"]
+        tzName = md["exchangeTimezoneName"]
+        basicInfo = ticker.get_fast_info()
+        todayClose = pd.to_datetime(ctp["regular"]["end"], unit='s', utc=True).tz_convert(tzName)
+        timeDiffClosed = (PKDateUtilities.currentDateTime() - todayClose).value
+        status = "Closed" if timeDiffClosed >= 0 else "Open"
+        lastPrice = round(basicInfo["last_price"],2)
+        prevClose = round(basicInfo["previous_close"],2)
+        change = round(lastPrice - prevClose,2)
+        pctChange = round(100*change/prevClose,2)
+        tradeDate = basicInfo._today_close.date().strftime("%Y-%m-%d")
         if len(status) > 0:
-            for market in status:
-                if market["market"] == "Capital Market":
-                    tradeDate = PKDateUtilities.dateFromdbYString(market["tradeDate"].split(" ")[0]).strftime("%Y-%m-%d")
-                    marketStatusShort = market["marketStatus"]
-                    change = int(round(market["variation"],0))
-                    pctChange = round(market["percentChange"],2)
-                    change = ((colorText.GREEN +"▲")if change >=0 else colorText.FAIL+"▼") + str(change) + colorText.END
-                    pctChange = (colorText.GREEN if pctChange >=0 else colorText.FAIL) + str(pctChange) + colorText.END
-                    marketStatusLong = f'{market["index"]} | {marketStatusShort} | {market["tradeDate"]} | {market["last"]} | {change} ({pctChange}%)'
-                    break
-        return marketStatusShort, marketStatusLong,tradeDate
+            change = ((colorText.GREEN +"▲")if change >=0 else colorText.FAIL+"▼") + str(change) + colorText.END
+            pctChange = (colorText.GREEN if pctChange >=0 else colorText.FAIL) + str(pctChange) + colorText.END
+            marketStatusLong = f'{info["longName"]} | {status} | {tradeDate} | {lastPrice} | {change} ({pctChange}%)'
+        return status, marketStatusLong,tradeDate
