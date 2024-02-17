@@ -139,9 +139,6 @@ class Security:
                         raise ValueError(f'The security found with the term {term} is a fund and the parameter asset_type is equal to {asset_type}, the class Fund should be used with this security.')
                     else:
                         raise ValueError(f'The security found with the term {term} is an ETF and the parameter asset_type is equal to {asset_type}, the class Fund should be used with this security.')
-
-
-
             else:
                 raise ValueError(f'Found only {len(code_list)} {self.asset_type} with the term {term}. The paramater itemRange must maximum equal to {len(code_list)-1}')
         else:

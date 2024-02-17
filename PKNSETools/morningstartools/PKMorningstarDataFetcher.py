@@ -59,7 +59,7 @@ class morningstarDataFetcher(fetcher):
             output["Stock"] = output["name"]
             try:
                 output.loc[:, "Stock"] = output.loc[:, "Stock"].apply(
-                            lambda x: Stock(x).ticker
+                            lambda x: self.searchStockTickerByFullName(x)
                         )
             except ValueError as e:
                 default_logger().debug(e, exc_info=True)
@@ -215,17 +215,11 @@ class morningstarDataFetcher(fetcher):
             output["Stock"] = output["Name"]
             try:
                 output.loc[:, "Stock"] = output.loc[:, "Stock"].apply(
-                            lambda x: Stock(x).ticker
+                            lambda x: self.searchStockTickerByFullName(x)
                         )
             except ValueError as e:
                 default_logger().debug(e, exc_info=True)
                 pass
-            # output.rename(
-            #     columns={
-            #         "Name": f"Stock",
-            #     },
-            #     inplace=True,
-            # )
             output.set_index("Stock", inplace=True)
             return output
         except Exception as e:
@@ -233,6 +227,13 @@ class morningstarDataFetcher(fetcher):
             pass
         return None
     
+    def searchStockTickerByFullName(self, fullName):
+        ticker = fullName.replace("*","").strip()
+        try:
+            ticker = Stock(ticker).ticker
+        except:
+            pass
+        return ticker
     # https://www.morningstar.com/stocks/xnse/idea/ownership
     # https://api-global.morningstar.com/sal-service/v1/stock/ownership/v1/0P0000C2H4/OwnershipData/mutualfund/20/data?languageId=en&locale=en&clientId=MDC&component=sal-ownership&version=4.14.0
     # For each stock: https://api-global.morningstar.com/sal-service/v1/stock/header/v2/data/0P0000N0EO/securityInfo?showStarRating=&languageId=en&locale=en&clientId=RSIN_SAL&component=sal-quote&version=4.13.0&access_token=JrelGdhGkgqeSJhy7BufcEzwN0sb
@@ -265,7 +266,7 @@ class morningstarDataFetcher(fetcher):
             output["Stock"] = output["name"]
             try:
                 output.loc[:, "Stock"] = output.loc[:, "Stock"].apply(
-                            lambda x: Stock(x).ticker
+                            lambda x: self.searchStockTickerByFullName(x)
                         )
             except ValueError as e:
                 default_logger().debug(e, exc_info=True)
