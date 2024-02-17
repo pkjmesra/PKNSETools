@@ -665,9 +665,15 @@ class Stock(Security):
             params = {"component":"sal-price-fairvalue"}
             params = self.defaultParams | params
             r = self.GetData("priceFairValue/v3", params=params, url_suffixe= f"data", headers=headers)
+        fv = None
         if r is not None and len(r) > 0:
-            NSEStockFairValueDB().saveCache(ticker=self.ticker, stockDict=r)
-        return r
+            try:
+                fv = r["chart"]["chartDatums"]["recent"]["latestFairValue"]
+                NSEStockFairValueDB().saveCache(ticker=self.ticker, stockDict={"latestFairValue":fv})
+            except Exception as e:
+                default_logger().debug(f"{e}:\n{self.term}:{r}",exc_info=True)
+                pass
+        return {"latestFairValue":fv} if fv is not None else fv
 
     def refreshMorningstarTokens(self, params, headers):
         if self.cookieHelper is None:
@@ -705,8 +711,8 @@ class Stock(Security):
 #     # d = stk.changeData(R)
 #     # print(f"institutionOwnership:\n{d}")
 
-#     fv = stk.fairValue()
-#     print(fv["chart"]["chartDatums"]["recent"]["latestFairValue"])
+#     # fv = stk.fairValue()
+#     # print(fv["latestFairValue"])
 # print("done")
 # R = stk.mutualFundSellers(top=50)
 # d = stk.changeData(R)
