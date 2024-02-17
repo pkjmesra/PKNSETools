@@ -452,13 +452,15 @@ def search_stock_autocomplete(term,filter=False):
          descKey = "Description"
          isinKey = "Ticker"
          ratingKey = "STARRATING"
+      if rootKey not in stockDict.keys() or "Table" not in stockDict.keys():
+         return search_results
       tables = stockDict[rootKey]["Table"]
       if not isinstance(tables, list):
          tables = [tables]
       possibleFindInBSE = False
       for table in tables:
         tickerCondition = (table[tickerKey] == term.upper())
-        nameCondition = ("(" not in table[descKey] and "*" not in table[descKey]) and ((term.upper() == table[descKey].upper()) or (len(term.split(" ")) > 0 and term.upper() in table[descKey].upper()))
+        nameCondition = (("(INDIA)" in table[descKey].upper() or "(" not in table[descKey]) and "*" not in table[descKey]) and ((term.upper() == table[descKey].upper()) or (len(term.split(" ")) > 0 and term.upper() in table[descKey].upper()))
         nseExchangeCondition = (table["Exchange"] == "NSE")
         bseExchangeCondition = (table["Exchange"] == "BSE")
         if (tickerCondition and bseExchangeCondition) or (nameCondition and bseExchangeCondition):
