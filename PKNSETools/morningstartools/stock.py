@@ -80,6 +80,21 @@ class Stock(Security):
         }
         return headers
 
+    def needsNetworkRequest(self, dbClass:None):
+        # Let's check when the last network call was made. If it was today, there's no point going again!
+        latestCheckedOnDate = dbClass.searchCache(ticker="LatestCheckedOnDate")
+        tradingDate = PKDateUtilities.tradingDate().strftime("%Y-%m-%d")
+        if latestCheckedOnDate is not None and len(latestCheckedOnDate) > 0 and "latestCheckedOnDate" in latestCheckedOnDate.keys():
+            latestDate = latestCheckedOnDate["LatestCheckedOnDate"]
+            if latestDate == tradingDate:
+                return False
+        if self.term == "LatestCheckedOnDate" or self.ticker == "LatestCheckedOnDate":
+            # The caller wants us to save the LatestCheckedOnDate. This should be done at the end after 
+            # all the rest of the stock searches has been made.
+            dbClass.saveCache(ticker="LatestCheckedOnDate", stockDict={"LatestCheckedOnDate":tradingDate})
+            return False
+        return True
+    
     def analysisData(self):
         """
         This function retrieves general data about the stock.
@@ -382,6 +397,9 @@ class Stock(Security):
         elif PKDateUtilities.isTradingTime():
             # Let's not make new requests to update the values during trading hours.
             return None
+        elif not self.needsNetworkRequest(NSEStockMFIDB()):
+            return None
+        
         params = {"component":"sal-ownership"}
         params = self.defaultParams | params
         try:
@@ -504,6 +522,9 @@ class Stock(Security):
         elif PKDateUtilities.isTradingTime():
             # Let's not make new requests to update the values during trading hours.
             return None
+        elif not self.needsNetworkRequest(NSEStockMFIDB()):
+            return None
+        
         params = {"component":"sal-ownership"}
         params = self.defaultParams | params
         try:
@@ -661,6 +682,8 @@ class Stock(Security):
             return r
         elif PKDateUtilities.isTradingTime():
             # Let's not make new requests to update the values during trading hours.
+            return None
+        elif not self.needsNetworkRequest(NSEStockMFIDB()):
             return None
         params = {"component":"sal-price-fairvalue"}
         params = self.defaultParams | params
