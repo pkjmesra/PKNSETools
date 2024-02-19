@@ -379,6 +379,9 @@ class Stock(Security):
             # Give the opportunity for the first 2 days to fetch latest end-of-last-month MFI data
             if PKDateUtilities.currentDateTime().day not in [1,2]:
                 return r_saved
+        elif PKDateUtilities.isTradingTime():
+            # Let's not make new requests to update the values during trading hours.
+            return None
         params = {"component":"sal-ownership"}
         params = self.defaultParams | params
         try:
@@ -498,6 +501,9 @@ class Stock(Security):
             # Give the opportunity for the first 2 days to fetch latest end-of-last-month MFI data
             if PKDateUtilities.currentDateTime().day not in [1,2]:
                 return r_saved
+        elif PKDateUtilities.isTradingTime():
+            # Let's not make new requests to update the values during trading hours.
+            return None
         params = {"component":"sal-ownership"}
         params = self.defaultParams | params
         try:
@@ -653,6 +659,9 @@ class Stock(Security):
         r = NSEStockFairValueDB().searchCache(ticker=self.ticker)
         if r is not None and len(r) > 0:
             return r
+        elif PKDateUtilities.isTradingTime():
+            # Let's not make new requests to update the values during trading hours.
+            return None
         params = {"component":"sal-price-fairvalue"}
         params = self.defaultParams | params
         headers = self.defaultHeaders
