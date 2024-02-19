@@ -13,7 +13,7 @@ from PKDevTools.classes.ColorText import colorText
 from PKDevTools.classes.Fetcher import fetcher
 from PKDevTools.classes.log import default_logger
 from PKNSETools.morningstartools.stock import Stock
-from PKNSETools.morningstartools.utils import random_user_agent
+from PKDevTools.classes.Utils import random_user_agent
 # This Class Handles Fetching of Stock Data over the internet from NSE/BSE
 
 class morningstarDataFetcher(fetcher):

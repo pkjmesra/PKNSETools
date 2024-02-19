@@ -33,7 +33,7 @@ from datetime import datetime
 from zipfile import ZipFile
 from mthrottle import Throttle
 from PKDevTools.classes.Fetcher import fetcher, session
-from PKNSETools.morningstartools.utils import random_user_agent
+from PKDevTools.classes.Utils import random_user_agent
 
 throttleConfig = {
     'default': {

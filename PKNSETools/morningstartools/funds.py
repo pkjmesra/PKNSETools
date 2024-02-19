@@ -33,7 +33,7 @@ from bs4 import BeautifulSoup
 from PKNSETools.morningstartools.error import no_site_error, not_200_response
 from PKNSETools.morningstartools.search import search_funds, token_investment_strategy
 from PKNSETools.morningstartools.security import Security
-from PKNSETools.morningstartools.utils import random_user_agent
+from PKDevTools.classes.Utils import random_user_agent
 
 
 class Funds(Security):
