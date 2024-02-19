@@ -79,12 +79,11 @@ class NSE:
         uAgent = random_user_agent()
 
         self.default_headers = {
-            'User-Agent': uAgent,
+            'User-Agent': uAgent ,#"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
             'Accept': '*/*',
-            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Language': 'en-US,en;q=0.9',
             'Accept-Encoding': 'gzip, deflate, br',
-            'Referer':
-            'https://www.nseindia.com/get-quotes/equity?symbol=HDFCBANK'
+            'Referer':'https://www.nseindia.com/option-chain'
         }
 
         self.dir = NSE.__getPath(download_folder, isFolder=True)
@@ -181,11 +180,11 @@ class NSE:
         th.check()
 
         try:
-            r = self.fetcher.fetchURL(url=url, params=params, headers=self.default_headers)
+            r = self.fetcher.fetchURL(url=url, params=params, headers=self.default_headers, timeout=10, raiseError=True)
         except ReadTimeout as e:
             raise TimeoutError(repr(e))
 
-        if not r.ok:
+        if r is not None and not r.ok:
             raise ConnectionError(f'{url} {r.status_code}: {r.reason}')
 
         return r
@@ -931,3 +930,6 @@ class NSE:
         data = self.__req(url, params={'type': type}).json()
 
         return data
+
+from PKDevTools.classes import Archiver
+nse = NSE(Archiver.get_user_outputs_dir())
