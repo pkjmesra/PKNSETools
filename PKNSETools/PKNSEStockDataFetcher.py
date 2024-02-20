@@ -202,10 +202,18 @@ class nseStockDataFetcher(fetcher):
         return occasion is not None, occasion
 
     def updatedHolidays(self):
-        nse  = NSE(Archiver.get_user_outputs_dir())
-        holidays = nse.holidays()
-        cm_holidays = holidays["CM"]
-        cm,cm_lastyear,raw = self.savedholidaysRaw()
+        cm_holidays = None
+        cm = None
+        try:
+            cm,cm_lastyear,raw = self.savedholidaysRaw()
+            nse  = NSE(Archiver.get_user_outputs_dir())
+            holidays = nse.holidays()
+            cm_holidays = holidays["CM"]
+        except Exception as e:
+            default_logger().debug(e, exc_info=True)
+            if cm_holidays is None or len(cm_holidays) < 1:
+                cm_holidays = cm
+            pass
         cm_holidays.extend(cm_lastyear)
         raw["CM"] = cm_holidays
         return cm_holidays, raw
