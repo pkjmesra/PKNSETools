@@ -7,5 +7,6 @@ PKNSETools/morningstartool/__pycache__
 *.egg-info
 .DS_Store
 *.pkl
+*.lck
 *.sqlite
 launch.json

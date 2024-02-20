@@ -34,6 +34,7 @@ from PKNSETools.morningstartools.utils import APIKEY, SITE
 from PKDevTools.classes.Utils import random_user_agent
 from PKDevTools.classes.Fetcher import fetcher
 
+DUMMY_SECURITY = "LatestCheckedOnDate"
 #with Universe field, we can detect the asset class
 #done find all stock echange and create a search_equity method
 #add parameter exchange to Security class and search stocks if stock and exchange
@@ -103,52 +104,53 @@ class Security:
 
         code_list = []
         
-        if exchange:
-            code_list = search_stock(term,['fundShareClassId','SecId','TenforeId','LegalName','Universe'],exchange=exchange,pageSize=pageSize,filters =filters, proxies=self.proxies)
-        else:
-            code_list = search_funds(term,['fundShareClassId','SecId','TenforeId','LegalName','Universe'], country, pageSize,filters =filters, proxies = self.proxies)
+        if term != DUMMY_SECURITY:
+            if exchange:
+                code_list = search_stock(term,['fundShareClassId','SecId','TenforeId','LegalName','Universe'],exchange=exchange,pageSize=pageSize,filters =filters, proxies=self.proxies)
+            else:
+                code_list = search_funds(term,['fundShareClassId','SecId','TenforeId','LegalName','Universe'], country, pageSize,filters =filters, proxies = self.proxies)
 
-        if code_list:
-            if itemRange < len(code_list):
-                self.code = code_list[itemRange]["fundShareClassId"]
-                self.name = code_list[itemRange]["LegalName"]
-                if "Ticker" in code_list[itemRange]:
-                    self.ticker = code_list[itemRange]["Ticker"]
-                if "TenforeId" in code_list[itemRange]:
-                    tenforeId = code_list[itemRange]["TenforeId"]
-                    regex = re.compile("[0-9]*\.[0-9]\.")
-                    self.isin = regex.sub('',tenforeId)                   
-                else:
-                    self.isin = None
-                    
-                    
-                universe = code_list[itemRange]["Universe"]
-
-                if universe[:2] == 'E0':
-                    self.asset_type = 'stock'
-                elif universe[:2] == 'ET':
-                    self.asset_type = 'etf'
-                elif universe[:2] == 'FO':
-                    self.asset_type = 'fund'
-
-
-                if universe[:2] == 'E0' and asset_type in ['etf', 'fund']:
-                    raise ValueError(f'The security found with the term {term} is a stock and the parameter asset_type is equal to {asset_type}, the class Stock should be used with this security.')
-                
-                if universe[:2] in ['FO', 'ET'] and asset_type =='stock':
-                    if universe[:2] == 'FO':
-                        raise ValueError(f'The security found with the term {term} is a fund and the parameter asset_type is equal to {asset_type}, the class Fund should be used with this security.')
+            if code_list:
+                if itemRange < len(code_list):
+                    self.code = code_list[itemRange]["fundShareClassId"]
+                    self.name = code_list[itemRange]["LegalName"]
+                    if "Ticker" in code_list[itemRange]:
+                        self.ticker = code_list[itemRange]["Ticker"]
+                    if "TenforeId" in code_list[itemRange]:
+                        tenforeId = code_list[itemRange]["TenforeId"]
+                        regex = re.compile("[0-9]*\.[0-9]\.")
+                        self.isin = regex.sub('',tenforeId)                   
                     else:
-                        raise ValueError(f'The security found with the term {term} is an ETF and the parameter asset_type is equal to {asset_type}, the class Fund should be used with this security.')
+                        self.isin = None
+                        
+                        
+                    universe = code_list[itemRange]["Universe"]
+
+                    if universe[:2] == 'E0':
+                        self.asset_type = 'stock'
+                    elif universe[:2] == 'ET':
+                        self.asset_type = 'etf'
+                    elif universe[:2] == 'FO':
+                        self.asset_type = 'fund'
+
+
+                    if universe[:2] == 'E0' and asset_type in ['etf', 'fund']:
+                        raise ValueError(f'The security found with the term {term} is a stock and the parameter asset_type is equal to {asset_type}, the class Stock should be used with this security.')
+                    
+                    if universe[:2] in ['FO', 'ET'] and asset_type =='stock':
+                        if universe[:2] == 'FO':
+                            raise ValueError(f'The security found with the term {term} is a fund and the parameter asset_type is equal to {asset_type}, the class Fund should be used with this security.')
+                        else:
+                            raise ValueError(f'The security found with the term {term} is an ETF and the parameter asset_type is equal to {asset_type}, the class Fund should be used with this security.')
+                else:
+                    raise ValueError(f'Found only {len(code_list)} {self.asset_type} with the term {term}. The paramater itemRange must maximum equal to {len(code_list)-1}')
             else:
-                raise ValueError(f'Found only {len(code_list)} {self.asset_type} with the term {term}. The paramater itemRange must maximum equal to {len(code_list)-1}')
-        else:
-            if country:
-                raise ValueError(f'0 {self.asset_type} found with the term {term} and country {country}')
-            elif exchange:
-                raise ValueError(f'0 {self.asset_type} found with the term {term} and exchange {exchange}')
-            else:
-                raise ValueError(f'0 {self.asset_type} found with the term {term}')
+                if country:
+                    raise ValueError(f'0 {self.asset_type} found with the term {term} and country {country}')
+                elif exchange:
+                    raise ValueError(f'0 {self.asset_type} found with the term {term} and exchange {exchange}')
+                else:
+                    raise ValueError(f'0 {self.asset_type} found with the term {term}')
             
 
 

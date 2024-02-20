@@ -22,7 +22,7 @@
     SOFTWARE.
 
 """
-from PKNSETools.morningstartools.security import Security
+from PKNSETools.morningstartools.security import Security, DUMMY_SECURITY
 import pandas as pd
 from PKDevTools.classes.CookieHelper import CookieHelper
 from PKDevTools.classes import Archiver
@@ -82,16 +82,16 @@ class Stock(Security):
 
     def needsNetworkRequest(self, dbClass:None):
         # Let's check when the last network call was made. If it was today, there's no point going again!
-        latestCheckedOnDate = dbClass.searchCache(ticker="LatestCheckedOnDate")
+        latestCheckedOnDate = dbClass.searchCache(ticker=DUMMY_SECURITY)
         tradingDate = PKDateUtilities.tradingDate().strftime("%Y-%m-%d")
-        if latestCheckedOnDate is not None and len(latestCheckedOnDate) > 0 and "latestCheckedOnDate" in latestCheckedOnDate.keys():
-            latestDate = latestCheckedOnDate["LatestCheckedOnDate"]
+        if latestCheckedOnDate is not None and len(latestCheckedOnDate) > 0 and DUMMY_SECURITY in latestCheckedOnDate.keys():
+            latestDate = latestCheckedOnDate[DUMMY_SECURITY]
             if latestDate == tradingDate:
                 return False
-        if self.term == "LatestCheckedOnDate" or self.ticker == "LatestCheckedOnDate":
+        if self.term == DUMMY_SECURITY or self.ticker == DUMMY_SECURITY:
             # The caller wants us to save the LatestCheckedOnDate. This should be done at the end after 
             # all the rest of the stock searches has been made.
-            dbClass.saveCache(ticker="LatestCheckedOnDate", stockDict={"LatestCheckedOnDate":tradingDate})
+            dbClass.saveCache(ticker=DUMMY_SECURITY, stockDict={DUMMY_SECURITY:tradingDate})
             return False
         return True
     
@@ -683,7 +683,7 @@ class Stock(Security):
         elif PKDateUtilities.isTradingTime():
             # Let's not make new requests to update the values during trading hours.
             return None
-        elif not self.needsNetworkRequest(NSEStockMFIDB()):
+        elif not self.needsNetworkRequest(NSEStockFairValueDB()):
             return None
         params = {"component":"sal-price-fairvalue"}
         params = self.defaultParams | params
@@ -733,19 +733,19 @@ class Stock(Security):
             d.sort_values(by=[sortKey], ascending=False, inplace=True)
         return d
 
-# stk = Stock("CTE")
-# stocks =["BANKINDIA","RELIANCE","SBIN"]
+# # stk = Stock("CTE")
+# stocks =[DUMMY_SECURITY, "RELIANCE","SBIN"]
 # for stockName in stocks:
 #     stk = Stock(stockName)
 #     R = stk.mutualFundOwnership(top=5)
 #     # d = stk.changeData(R)
-#     # print(f"mutualFundOwnership:\n{d}")
-#     R = stk.institutionOwnership(top=5)
-#     # d = stk.changeData(R)
-#     # print(f"institutionOwnership:\n{d}")
+# #     # print(f"mutualFundOwnership:\n{d}")
+# #     R = stk.institutionOwnership(top=5)
+# #     # d = stk.changeData(R)
+# #     # print(f"institutionOwnership:\n{d}")
 
-#     # fv = stk.fairValue()
-#     # print(fv["latestFairValue"])
+#     fv = stk.fairValue()
+#     print(fv["latestFairValue"])
 # print("done")
 # R = stk.mutualFundSellers(top=50)
 # d = stk.changeData(R)
