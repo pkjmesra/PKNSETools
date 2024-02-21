@@ -931,5 +931,5 @@ class NSE:
 
         return data
 
-from PKDevTools.classes import Archiver
-nse = NSE(Archiver.get_user_outputs_dir())
+# from PKDevTools.classes import Archiver
+# nse = NSE(Archiver.get_user_outputs_dir())
