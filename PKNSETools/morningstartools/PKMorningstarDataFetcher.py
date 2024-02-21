@@ -141,7 +141,7 @@ class morningstarDataFetcher(fetcher):
             'x-newrelic-id': 'VQMFV15RDRABV1ZVAAEBUlUG',
             'x-requested-with': 'XMLHttpRequest',
         }
-        headers['cookie'] = getRes.headers['Set-Cookie']
+        headers['cookie'] = getRes.headers.get('Set-Cookie')
 
         data = {
             'ctl00$ctl00$ContentPlaceHolder1$contentResearchTools$scriptMgr': 'ctl00$ctl00$ContentPlaceHolder1$contentResearchTools$ctl00$upnlSectorExposure|ctl00$ctl00$ContentPlaceHolder1$contentResearchTools$ctl00$btnGo',
