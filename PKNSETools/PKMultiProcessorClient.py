@@ -23,10 +23,12 @@
     SOFTWARE.
 
 """
-
+import warnings
+import os
+warnings.simplefilter("ignore", UserWarning)
+os.environ["PYTHONWARNINGS"]="ignore::UserWarning"
 import logging
 import multiprocessing
-import os
 import sys
 from queue import Empty
 

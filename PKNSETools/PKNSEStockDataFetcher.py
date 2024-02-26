@@ -228,7 +228,7 @@ class nseStockDataFetcher(fetcher):
         basicInfo = ticker.get_fast_info()
         todayClose = pd.to_datetime(ctp["regular"]["end"], unit='s', utc=True).tz_convert(tzName)
         timeDiffClosed = (PKDateUtilities.currentDateTime() - todayClose).value
-        status = "Closed" if timeDiffClosed >= 0 else "Open"
+        status = "Closed" if (timeDiffClosed >= 0 or not PKDateUtilities.isTradingTime()) else "Open"
         lastPrice = round(basicInfo["last_price"],2)
         prevClose = round(basicInfo["previous_close"],2)
         change = round(lastPrice - prevClose,2)
@@ -239,3 +239,61 @@ class nseStockDataFetcher(fetcher):
             pctChange = (colorText.GREEN if pctChange >=0 else colorText.FAIL) + str(pctChange) + colorText.END
             marketStatusLong = f'{info["longName"]} | {status} | {tradeDate} | {lastPrice} | {change} ({pctChange}%)'
         return status, marketStatusLong,tradeDate
+
+# f = nseStockDataFetcher()
+# f.capitalMarketStatus()
+
+
+# from yfinhanced import YFClient
+# import pandas as pd
+# import numpy as np
+# import json
+
+# yf = YFClient()
+# # await yf.connect()
+
+# # x = await yf.get_quote('AAPL')
+
+
+# x = yf.get_price_history('SPY', start=pd.to_datetime('2021-01-01', utc=True), 
+#         end=pd.to_datetime('today', utc=True), interval='1d', adjust=True)
+
+# from yfinhanced import YFWSClient
+# import aiohttp
+# from google.protobuf.json_format import MessageToDict
+# import asyncio
+# import signal
+
+
+# data = {}
+# async def on_message(msg):
+#     # with lock:
+#     if msg['symbol'] not in data.keys():
+#         data[msg['symbol']] = []
+#     data[msg['symbol']] += [msg]
+#     print(msg)
+
+# yfws = YFWSClient()
+# loop = asyncio.get_event_loop()
+# # loop.create_task(yfws.start())
+# # loop.create_task(yfws.subscribe('BTC-USD'))
+# loop.create_task(yf.connect())
+# loop.create_task(yf.get_price_history('^NSEI', start=PKDateUtilities.currentDateTime(), 
+#         end=PKDateUtilities.currentDateTime(), interval='1d', adjust=False))
+
+# async def sub2(cb):# {{{
+#     await asyncio.sleep(5)
+#     await yfws.disconnect()
+#     await asyncio.sleep(3)
+#     loop = asyncio.get_event_loop()
+#     await asyncio.gather(yfws.start(), yfws.subscribe('AAPL'))# }}}
+
+# yfws.on_message = on_message
+
+# for s in [signal.SIGHUP, signal.SIGTERM, signal.SIGINT]:
+#     loop.add_signal_handler(s, lambda s=s: asyncio.create_task(yfws.shutdown()))
+
+# try:
+#     loop.run_forever()
+# finally:
+#     loop.close()
