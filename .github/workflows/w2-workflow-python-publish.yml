@@ -83,6 +83,7 @@ jobs:
 
     runs-on: windows-latest
     needs: check_should_run
+    permissions: write-all
     steps:
     - uses: actions/checkout@v2
       with:
