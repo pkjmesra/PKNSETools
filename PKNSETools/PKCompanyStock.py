@@ -38,7 +38,11 @@ from PKNSETools.PKConstants import (_base_domain, _head, _headers,
 
 session = requests.session()
 
-def get_Company_History_Data(company, from_date=(datetime.today().strftime("%d-%m-%Y")), to_date=(datetime(datetime.today().year - 1, datetime.today().month,datetime.today().day).strftime("%d-%m-%Y"))):
+def get_Company_History_Data(company, from_date=None, to_date=None):
+    if from_date is None:
+        from_date = datetime.today().strftime("%d-%m-%Y")
+    if to_date is None:
+        to_date = datetime(datetime.today().year - 1, datetime.today().month, datetime.today().day).strftime("%d-%m-%Y")
     session.get(f'{_base_domain}', headers=_head)
     session.get(f'{_base_domain}{_quote_url_path_html}'.format(company), headers=_head)  # to save cookies
     session.get(f'{_base_domain}{_historical_company_data_url_path_html}'.format(company), headers=_head)
@@ -47,7 +51,11 @@ def get_Company_History_Data(company, from_date=(datetime.today().strftime("%d-%
     df = pd.read_csv(StringIO(webdata.text[3:]))
     return df
 
-def get_nifty_History_Data(indexName, from_date = ((datetime(datetime.today().year - 1, datetime.today().month, datetime.today().day) + timedelta(days=2)).strftime("%d-%m-%Y")), to_date =(datetime.today().strftime("%d-%m-%Y"))):
+def get_nifty_History_Data(indexName, from_date=None, to_date=None):
+    if from_date is None:
+        from_date = (datetime(datetime.today().year - 1, datetime.today().month, datetime.today().day) + timedelta(days=2)).strftime("%d-%m-%Y")
+    if to_date is None:
+        to_date = datetime.today().strftime("%d-%m-%Y")
     indexName = indexName.upper()
     indexName = indexName.replace(' ', '%20')
     indexName = indexName.replace('-', '%20')
