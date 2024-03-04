@@ -106,7 +106,7 @@ class nseStockDataFetcher(fetcher):
                 stockCode = str(
                     input(
                         colorText.BOLD
-                        + colorText.BLUE
+                        + colorText.FAIL
                         + "[+] Enter Stock Code(s) for screening (Multiple codes should be seperated by ,): "
                     )
                 ).upper()
