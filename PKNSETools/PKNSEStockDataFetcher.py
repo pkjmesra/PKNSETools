@@ -223,17 +223,23 @@ class nseStockDataFetcher(fetcher):
         ticker = yf.Ticker(exchange) # ^IXIC
         info = ticker.info
         md = ticker.get_history_metadata()
+        ltd = md["regularMarketTime"]
         ctp = md["currentTradingPeriod"]
         tzName = md["exchangeTimezoneName"]
+        lastTradeDate = pd.to_datetime(ltd, unit='s', utc=True).tz_convert(tzName)
         basicInfo = ticker.get_fast_info()
         todayClose = pd.to_datetime(ctp["regular"]["end"], unit='s', utc=True).tz_convert(tzName)
-        timeDiffClosed = (PKDateUtilities.currentDateTime() - todayClose).value
-        status = "Closed" if (timeDiffClosed >= 0 or not PKDateUtilities.isTradingTime()) else "Open"
+        todayOpen = pd.to_datetime(ctp["regular"]["start"], unit='s', utc=True).tz_convert(tzName)
+        now = PKDateUtilities.currentDateTime().astimezone(tz=pytz.timezone(tzName))
+        isClosed = now < todayOpen and now < todayClose
+        isOpen = now >= todayOpen and todayClose >= now
+        status = "Closed" if isClosed else ("Open" if isOpen else "?")
         lastPrice = round(basicInfo["last_price"],2)
         prevClose = round(basicInfo["previous_close"],2)
         change = round(lastPrice - prevClose,2)
         pctChange = round(100*change/prevClose,2)
-        tradeDate = basicInfo._today_close.date().strftime("%Y-%m-%d")
+        tradeDate = lastTradeDate.strftime("%Y-%m-%d")
+        
         if len(status) > 0:
             change = ((colorText.GREEN +"▲")if change >=0 else colorText.FAIL+"▼") + str(change) + colorText.END
             pctChange = (colorText.GREEN if pctChange >=0 else colorText.FAIL) + str(pctChange) + colorText.END
