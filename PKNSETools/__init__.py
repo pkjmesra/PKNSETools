@@ -28,6 +28,6 @@ from .PKCompanyStock import *
 from .PKConstants import *
 from .PKIntraDay import *
 from .Benny.NSE import *
-from .Nasdaq import *
+from .Nasdaq.PKNasdaqIndex import *
 
 __version__='0.1'
