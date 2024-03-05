@@ -31,8 +31,8 @@ from PKDevTools.classes.Utils import random_user_agent
 from PKDevTools.classes.CookieHelper import CookieHelper
 
 class PKNasdaqIndexFetcher(fetcher):
-    def __init__(self):
-         super().__init__()
+    def __init__(self, configManager=None):
+         super().__init__(configManager=configManager)
          self.cookieHelper = None
          self.defaultCookies = None
          self.defaultHeaders = {'user-agent' : random_user_agent()}
