@@ -231,9 +231,11 @@ class nseStockDataFetcher(fetcher):
         todayClose = pd.to_datetime(ctp["regular"]["end"], unit='s', utc=True).tz_convert(tzName)
         todayOpen = pd.to_datetime(ctp["regular"]["start"], unit='s', utc=True).tz_convert(tzName)
         now = PKDateUtilities.currentDateTime().astimezone(tz=pytz.timezone(tzName))
-        isClosed = now < todayOpen and now < todayClose
+        ts = datetime.datetime.timestamp(now)
+        now = pd.to_datetime(ts, unit='s', utc=True).tz_convert(tzName)
+        # isClosed = now < todayOpen and now < todayClose
         isOpen = now >= todayOpen and todayClose >= now
-        status = "Closed" if isClosed else ("Open" if isOpen else "?")
+        status = "Open" if isOpen else "Closed"
         lastPrice = round(basicInfo["last_price"],2)
         prevClose = round(basicInfo["previous_close"],2)
         change = round(lastPrice - prevClose,2)
@@ -247,7 +249,7 @@ class nseStockDataFetcher(fetcher):
         return status, marketStatusLong,tradeDate
 
 # f = nseStockDataFetcher()
-# f.capitalMarketStatus(exchange="^IXIC")
+# f.capitalMarketStatus(exchange="^NSEI")
 
 
 # from yfinhanced import YFClient
