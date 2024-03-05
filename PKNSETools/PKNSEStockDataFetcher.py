@@ -218,9 +218,9 @@ class nseStockDataFetcher(fetcher):
         raw["CM"] = cm_holidays
         return cm_holidays, raw
 
-    def capitalMarketStatus(self):
+    def capitalMarketStatus(self, exchange="^NSEI"):
         # nse  = NSE(Archiver.get_user_outputs_dir())
-        ticker = yf.Ticker("^NSEI")
+        ticker = yf.Ticker(exchange) # ^IXIC
         info = ticker.info
         md = ticker.get_history_metadata()
         ctp = md["currentTradingPeriod"]
@@ -241,7 +241,7 @@ class nseStockDataFetcher(fetcher):
         return status, marketStatusLong,tradeDate
 
 # f = nseStockDataFetcher()
-# f.capitalMarketStatus()
+# f.capitalMarketStatus(exchange="^IXIC")
 
 
 # from yfinhanced import YFClient
