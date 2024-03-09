@@ -3,6 +3,7 @@ import urllib
 import warnings
 from io import StringIO
 
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
@@ -14,6 +15,7 @@ from PKDevTools.classes.Fetcher import fetcher
 from PKDevTools.classes.log import default_logger
 from PKNSETools.morningstartools.stock import Stock
 from PKDevTools.classes.Utils import random_user_agent
+from PKDevTools.classes.PKDateUtilities import PKDateUtilities
 # This Class Handles Fetching of Stock Data over the internet from NSE/BSE
 
 class morningstarDataFetcher(fetcher):
@@ -288,8 +290,41 @@ class morningstarDataFetcher(fetcher):
             pass
         return None
 
-# from pkscreener.classes import ConfigManager
-# configmgr = ConfigManager.tools()
-# f = tools(configmgr)
-# # f.fetchMorningstarStocksPerformanceForExchange()
-# f.fetchMorningstarFundFavouriteStocks()
+    def getCorporateActions(self):
+        dividends_dfs = pd.read_html("https://www.barodaetrade.com/Markettracker/Dividend_Declared")
+        bonus_dfs = pd.read_html("https://www.barodaetrade.com/Markettracker/Bonous_Issue")
+        stockSplit_dfs = pd.read_html("https://www.barodaetrade.com/Markettracker/Stock_Split")
+        dividends_df = dividends_dfs[1]
+        bonus_df = bonus_dfs[1]
+        stockSplit_df = stockSplit_dfs[1]
+        dfs = [dividends_df,bonus_df,stockSplit_df]
+        dateColumns = ["Record","Div.Date","Split","Announced"]
+        for df in dfs:
+            df.rename(
+                    columns={
+                        "Company Name": "Stock",
+                        "Dividend Type": "Div.Type",
+                        "Announcement Date": "Announced",
+                        "Dividend Date": "Div.Date",
+                        "Dividend (%)": "Div(%)",
+                        "Record Date": "Record",
+                        "Split Date": "Split",
+                        "FV Before": "OldFV",
+                        "FV After": "NewFV",
+                        "Bonus Ratio": "Ratio",
+                    },
+                    inplace=True,
+                )
+            try:
+                df.loc[:, "Stock"] = df.loc[:, "Stock"].apply(
+                            lambda x: self.searchStockTickerByFullName(x)
+                        )
+                for col in dateColumns:
+                    if col in df.columns:
+                        df.loc[:, col] = df.loc[:, col].apply(
+                                lambda x: PKDateUtilities.dateFromdbYString(x).strftime("%Y-%m-%d")
+                            )
+            except ValueError as e:
+                default_logger().debug(e, exc_info=True)
+                pass
+        return dividends_df, bonus_df, stockSplit_df
