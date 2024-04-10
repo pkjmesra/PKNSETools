@@ -10,6 +10,8 @@ from bs4 import BeautifulSoup
 warnings.simplefilter("ignore", DeprecationWarning)
 warnings.simplefilter("ignore", FutureWarning)
 import pandas as pd
+from PKDevTools.classes.CookieHelper import CookieHelper
+from PKDevTools.classes import Archiver
 from PKDevTools.classes.ColorText import colorText
 from PKDevTools.classes.Fetcher import fetcher
 from PKDevTools.classes.log import default_logger
@@ -290,13 +292,47 @@ class morningstarDataFetcher(fetcher):
             pass
         return None
 
+    def refreshBobCapsTokens(self):
+        default_headers = {
+            "Accept-Encoding": "gzip, deflate, br, zstd",
+            "Accept-Language": "en-US,en;q=0.9",
+            "DNT": "1",
+            "Host": "www.barodaetrade.com",
+            "Referer": "https://www.barodaetrade.com/Markettracker/Dividend_Declared",
+            "Upgrade-Insecure-Requests": "1",
+            "User-Agent": random_user_agent()
+        }
+        cookieHelper = CookieHelper(download_folder=Archiver.get_user_outputs_dir(),
+                                                 baseCookieUrl="https://www.barodaetrade.com/Markettracker/Dividend_Declared",
+                                                 cookieStoreName="bobcaps",
+                                                 baseHtmlUrl="https://www.barodaetrade.com/Markettracker/Dividend_Declared",
+                                                 htmlStoreName="bobcaps")
+        self.session.headers.update(default_headers)
+        self.session.cookies.update(cookieHelper.cookies)
+
     def getCorporateActions(self):
-        dividends_dfs = pd.read_html("https://www.barodaetrade.com/Markettracker/Dividend_Declared")
-        bonus_dfs = pd.read_html("https://www.barodaetrade.com/Markettracker/Bonous_Issue")
-        stockSplit_dfs = pd.read_html("https://www.barodaetrade.com/Markettracker/Stock_Split")
-        dividends_df = dividends_dfs[1]
-        bonus_df = bonus_dfs[1]
-        stockSplit_df = stockSplit_dfs[1]
+        self.refreshBobCapsTokens()
+        dividends_df = pd.DataFrame([{"Company Name":""}])
+        bonus_df = pd.DataFrame([{"Company Name":""}])
+        stockSplit_df = pd.DataFrame([{"Company Name":""}])
+        try:
+            dividend_html = self.fetchURL("https://www.barodaetrade.com/Markettracker/Dividend_Declared")
+            dividends_dfs = pd.read_html(dividend_html.text)
+            dividends_df = dividends_dfs[1]
+        except:
+            pass
+        try:
+            bonus_html = self.fetchURL("https://www.barodaetrade.com/Markettracker/Bonous_Issue")
+            bonus_dfs = pd.read_html(bonus_html.text)
+            bonus_df = bonus_dfs[1]
+        except:
+            pass
+        try:
+            stockSplit_html = self.fetchURL("https://www.barodaetrade.com/Markettracker/Stock_Split")
+            stockSplit_dfs = pd.read_html(stockSplit_html.text)
+            stockSplit_df = stockSplit_dfs[1]
+        except:
+            pass
         dfs = [dividends_df,bonus_df,stockSplit_df]
         dateColumns = ["Record","Div.Date","Split","Announced"]
         for df in dfs:
