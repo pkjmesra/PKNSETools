@@ -35,6 +35,8 @@ from PKNSETools.morningstartools.utils import (ASSET_TYPE, EXCHANGE, FIELDS, FIL
                     SITE)
 from PKDevTools.classes.Utils import random_user_agent
 from PKDevTools.classes.log import default_logger
+from PKDevTools.classes.OutputControls import OutputControls
+
 from PKNSETools.morningstartools.NSEStockDB import NSEStockDB
 
 def filter_universe(field = FILTER_FUND, proxies = {}):
@@ -295,7 +297,7 @@ def search_funds(term, field, country = "", pageSize=10, currency ='INR', filter
   if result['rows']:
     return result['rows']
   else:
-    print('0 fund found with the term %s' % (term))
+    OutputControls.printOutput('0 fund found with the term %s' % (term))
     return {}
 
 def search_stock(term,field,exchange, pageSize =10,currency ='INR', filters={}, proxies={}):

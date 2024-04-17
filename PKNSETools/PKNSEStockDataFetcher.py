@@ -38,6 +38,7 @@ from PKDevTools.classes.ColorText import colorText
 from PKDevTools.classes.PKDateUtilities import PKDateUtilities
 from PKDevTools.classes.Fetcher import fetcher
 from PKDevTools.classes.log import default_logger
+from PKDevTools.classes.OutputControls import OutputControls
 
 from PKNSETools.Benny.NSE import NSE
 from PKDevTools.classes.Utils import random_user_agent
@@ -113,42 +114,42 @@ class nseStockDataFetcher(fetcher):
             stockCode = stockCode.replace(" ", "")
             listStockCodes = stockCode.split(",")
         else:
-            print(colorText.BOLD + "[+] Getting Stock Codes From NSE... ", end="")
+            OutputControls.printOutput(colorText.BOLD + "[+] Getting Stock Codes From NSE... ", end="")
             listStockCodes = self.fetchNiftyCodes(tickerOption)
             if len(listStockCodes) > 10:
-                print(
+                OutputControls.printOutput(
                     colorText.GREEN
                     + ("=> Done! Fetched %d stock codes." % len(listStockCodes))
                     + colorText.END
                 )
                 if self.configManager.shuffleEnabled:
                     random.shuffle(listStockCodes)
-                    print(
+                    OutputControls.printOutput(
                         colorText.BLUE
                         + "[+] Stock shuffling is active."
                         + colorText.END
                     )
                 else:
-                    print(
+                    OutputControls.printOutput(
                         colorText.FAIL
                         + "[+] Stock shuffling is inactive."
                         + colorText.END
                     )
                 if self.configManager.stageTwo:
-                    print(
+                    OutputControls.printOutput(
                         colorText.BLUE
                         + "[+] Screening only for the stocks in Stage-2! Edit User Config to change this."
                         + colorText.END
                     )
                 else:
-                    print(
+                    OutputControls.printOutput(
                         colorText.FAIL
                         + "[+] Screening only for the stocks in all Stages! Edit User Config to change this."
                         + colorText.END
                     )
 
             else:
-                print(
+                OutputControls.printOutput(
                     colorText.FAIL
                     + "=> Error getting stock codes from NSE!"
                     + colorText.END
