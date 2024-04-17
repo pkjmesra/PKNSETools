@@ -114,42 +114,42 @@ class nseStockDataFetcher(fetcher):
             stockCode = stockCode.replace(" ", "")
             listStockCodes = stockCode.split(",")
         else:
-            OutputControls.printOutput(colorText.BOLD + "[+] Getting Stock Codes From NSE... ", end="")
+            OutputControls().printOutput(colorText.BOLD + "[+] Getting Stock Codes From NSE... ", end="")
             listStockCodes = self.fetchNiftyCodes(tickerOption)
             if len(listStockCodes) > 10:
-                OutputControls.printOutput(
+                OutputControls().printOutput(
                     colorText.GREEN
                     + ("=> Done! Fetched %d stock codes." % len(listStockCodes))
                     + colorText.END
                 )
                 if self.configManager.shuffleEnabled:
                     random.shuffle(listStockCodes)
-                    OutputControls.printOutput(
+                    OutputControls().printOutput(
                         colorText.BLUE
                         + "[+] Stock shuffling is active."
                         + colorText.END
                     )
                 else:
-                    OutputControls.printOutput(
+                    OutputControls().printOutput(
                         colorText.FAIL
                         + "[+] Stock shuffling is inactive."
                         + colorText.END
                     )
                 if self.configManager.stageTwo:
-                    OutputControls.printOutput(
+                    OutputControls().printOutput(
                         colorText.BLUE
                         + "[+] Screening only for the stocks in Stage-2! Edit User Config to change this."
                         + colorText.END
                     )
                 else:
-                    OutputControls.printOutput(
+                    OutputControls().printOutput(
                         colorText.FAIL
                         + "[+] Screening only for the stocks in all Stages! Edit User Config to change this."
                         + colorText.END
                     )
 
             else:
-                OutputControls.printOutput(
+                OutputControls().printOutput(
                     colorText.FAIL
                     + "=> Error getting stock codes from NSE!"
                     + colorText.END

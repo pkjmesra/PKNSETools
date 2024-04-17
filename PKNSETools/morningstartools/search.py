@@ -297,7 +297,7 @@ def search_funds(term, field, country = "", pageSize=10, currency ='INR', filter
   if result['rows']:
     return result['rows']
   else:
-    OutputControls.printOutput('0 fund found with the term %s' % (term))
+    OutputControls().printOutput('0 fund found with the term %s' % (term))
     return {}
 
 def search_stock(term,field,exchange, pageSize =10,currency ='INR', filters={}, proxies={}):
