@@ -114,7 +114,7 @@ class nseStockDataFetcher(fetcher):
             stockCode = stockCode.replace(" ", "")
             listStockCodes = stockCode.split(",")
         else:
-            OutputControls().printOutput(colorText.BOLD + "[+] Getting Stock Codes From NSE... ", end="")
+            OutputControls().printOutput(colorText.BOLD + "[+] Getting Stock Codes From NSE... ")
             listStockCodes = self.fetchNiftyCodes(tickerOption)
             if len(listStockCodes) > 10:
                 OutputControls().printOutput(
