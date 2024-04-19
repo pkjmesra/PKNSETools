@@ -249,8 +249,8 @@ class nseStockDataFetcher(fetcher):
             marketStatusLong = f'{info["longName"]} | {status} | {tradeDate} | {lastPrice} | {change} ({pctChange}%)'
         return status, marketStatusLong,tradeDate
 
-f = nseStockDataFetcher()
-f.capitalMarketStatus(exchange="^NSEI")
+# f = nseStockDataFetcher()
+# f.capitalMarketStatus(exchange="^NSEI")
 
 
 # from yfinhanced import YFClient
