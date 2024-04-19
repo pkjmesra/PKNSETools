@@ -238,7 +238,7 @@ class nseStockDataFetcher(fetcher):
         isOpen = now >= todayOpen and todayClose >= now
         status = "Open" if isOpen else "Closed"
         lastPrice = round(basicInfo["last_price"],2)
-        prevClose = round(basicInfo["previous_close"],2)
+        prevClose = round(basicInfo["regular_market_previous_close"],2)
         change = round(lastPrice - prevClose,2)
         pctChange = round(100*change/prevClose,2)
         tradeDate = lastTradeDate.strftime("%Y-%m-%d")
@@ -249,8 +249,8 @@ class nseStockDataFetcher(fetcher):
             marketStatusLong = f'{info["longName"]} | {status} | {tradeDate} | {lastPrice} | {change} ({pctChange}%)'
         return status, marketStatusLong,tradeDate
 
-# f = nseStockDataFetcher()
-# f.capitalMarketStatus(exchange="^NSEI")
+f = nseStockDataFetcher()
+f.capitalMarketStatus(exchange="^NSEI")
 
 
 # from yfinhanced import YFClient
