@@ -304,9 +304,9 @@ class morningstarDataFetcher(fetcher):
         }
         cookieHelper = CookieHelper(download_folder=Archiver.get_user_outputs_dir(),
                                                  baseCookieUrl="https://www.barodaetrade.com/Markettracker/Dividend_Declared",
-                                                 cookieStoreName="bobcaps",
+                                                 cookieStoreName="bcaps",
                                                  baseHtmlUrl="https://www.barodaetrade.com/Markettracker/Dividend_Declared",
-                                                 htmlStoreName="bobcaps")
+                                                 htmlStoreName="bcaps")
         self.session.headers.update(default_headers)
         self.session.cookies.update(cookieHelper.cookies)
 

@@ -711,9 +711,9 @@ class Stock(Security):
         if self.cookieHelper is None:
             self.cookieHelper = CookieHelper(download_folder=Archiver.get_user_outputs_dir(),
                                                  baseCookieUrl="https://morningstar.in/stocks/0p0000c3nz/nse-hdfc-bank-ltd/overview.aspx",
-                                                 cookieStoreName="morningstar",
+                                                 cookieStoreName="msta",
                                                  baseHtmlUrl="https://morningstar.in/stocks/0p0000c3nz/nse-hdfc-bank-ltd/overview.aspx",
-                                                 htmlStoreName="morningstar")
+                                                 htmlStoreName="msta")
         else:
             self.cookieHelper.resetCookies()
             self.cookieHelper.resetMetas()
