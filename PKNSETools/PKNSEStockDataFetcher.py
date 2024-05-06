@@ -222,15 +222,33 @@ class nseStockDataFetcher(fetcher):
     def capitalMarketStatus(self, exchange="^NSEI"):
         # nse  = NSE(Archiver.get_user_outputs_dir())
         ticker = yf.Ticker(exchange) # ^IXIC
-        info = ticker.info
-        md = ticker.get_history_metadata()
-        ltd = md["regularMarketTime"]
-        ctp = md["currentTradingPeriod"]
-        tzName = md["exchangeTimezoneName"]
-        lastTradeDate = pd.to_datetime(ltd, unit='s', utc=True).tz_convert(tzName)
-        basicInfo = ticker.get_fast_info()
-        todayClose = pd.to_datetime(ctp["regular"]["end"], unit='s', utc=True).tz_convert(tzName)
-        todayOpen = pd.to_datetime(ctp["regular"]["start"], unit='s', utc=True).tz_convert(tzName)
+        try:
+            info = ticker.info
+        except:
+            info = {"longName":exchange}
+            pass
+        try:
+            md = ticker.get_history_metadata()
+            ltd = md["regularMarketTime"]
+            ctp = md["currentTradingPeriod"]
+            tzName = md["exchangeTimezoneName"]
+            lastTradeDate = pd.to_datetime(ltd, unit='s', utc=True).tz_convert(tzName)
+        except:
+            tzName = "Asia/Kolkata"
+            lastTradeDate = PKDateUtilities.currentDateTime()
+            pass
+        try:
+            basicInfo = ticker.get_fast_info()
+        except:
+            basicInfo = {"last_price":0,"regular_market_previous_close":0}
+            pass
+        try:
+            todayClose = pd.to_datetime(ctp["regular"]["end"], unit='s', utc=True).tz_convert(tzName)
+            todayOpen = pd.to_datetime(ctp["regular"]["start"], unit='s', utc=True).tz_convert(tzName)
+        except:
+            todayClose = PKDateUtilities.currentDateTime()
+            todayOpen = PKDateUtilities.currentDateTime()
+            pass
         now = PKDateUtilities.currentDateTime().astimezone(tz=pytz.timezone(tzName))
         ts = datetime.datetime.timestamp(now)
         now = pd.to_datetime(ts, unit='s', utc=True).tz_convert(tzName)
@@ -244,8 +262,8 @@ class nseStockDataFetcher(fetcher):
         tradeDate = lastTradeDate.strftime("%Y-%m-%d")
         
         if len(status) > 0:
-            change = ((colorText.GREEN +"▲")if change >=0 else colorText.FAIL+"▼") + str(change) + colorText.END
-            pctChange = (colorText.GREEN if pctChange >=0 else colorText.FAIL) + str(pctChange) + colorText.END
+            change = ((colorText.GREEN +"▲")if change >=0 else colorText.FAIL+"▼") + str(change if pd.notna(change) else "?") + colorText.END
+            pctChange = (colorText.GREEN if pctChange >=0 else colorText.FAIL) + str(pctChange if pd.notna(pctChange) else "?") + colorText.END
             marketStatusLong = f'{info["longName"]} | {status} | {tradeDate} | {lastPrice} | {change} ({pctChange}%)'
         return status, marketStatusLong,tradeDate
 
