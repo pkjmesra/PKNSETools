@@ -257,6 +257,12 @@ class nseStockDataFetcher(fetcher):
         status = "Open" if isOpen else "Closed"
         lastPrice = round(basicInfo["last_price"],2)
         prevClose = round(basicInfo["regular_market_previous_close"],2)
+        if not pd.notna(prevClose):
+            prevClose = md["previousClose"] if "previousClose" in md.keys() else prevClose
+            if not pd.notna(prevClose):
+                prevClose = info["previousClose"] if "previousClose" in info.keys() else prevClose
+                if not pd.notna(prevClose):
+                    prevClose = info["regularMarketPreviousClose"] if "regularMarketPreviousClose" in info.keys() else prevClose
         change = round(lastPrice - prevClose,2)
         pctChange = round(100*change/prevClose,2)
         tradeDate = lastTradeDate.strftime("%Y-%m-%d")
