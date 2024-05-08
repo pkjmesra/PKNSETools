@@ -27,7 +27,8 @@ import json
 from collections import namedtuple
 
 import requests
-
+# from PKDevTools.classes.CookieHelper import CookieHelper
+# from PKDevTools.classes import Archiver
 from PKNSETools.PKConstants import (_autoComplete_url_path, _base_domain,
                                     _head, _quote_url_path)
 
@@ -119,11 +120,9 @@ def get_Search_Results_By_Name(name):
     search_result = json.loads(str(search_results.json()).replace("'","\""), object_hook=_get_Tuple_From_JSON)
     return search_result
 
-def get_Company_Details_By_Name(name):
-    search_results = get_Search_Results_By_Name(name)
-    search_result = search_results.symbols[0].symbol
+def download(symbol):
     get_details = f'{_base_domain}{_quote_url_path}'
-    company_details = session.get(url=get_details.format(search_result), headers=_head)
+    company_details = session.get(url=get_details.format(symbol), headers=_head)
     text = str(company_details.json()).replace("'","\"").replace('True','true').replace('False','false').replace('None','null')
     # '{"info": {
     #       "symbol": "SBIN", 
@@ -200,4 +199,18 @@ def get_Company_Details_By_Name(name):
     companyDetails = json.loads(text, object_hook=_get_Tuple_From_JSON)
     return companyDetails
 
-# print(get_Id_By_Name('SBIN'))
+def get_Company_Details_By_Name(name):
+    search_results = get_Search_Results_By_Name(name)
+    symbol = search_results.symbols[0].symbol
+    return download(symbol)
+    
+# def refreshNSECookies():
+#     cookieHelper = CookieHelper(download_folder=Archiver.get_user_outputs_dir(),
+#                                                  baseCookieUrl="https://www.barodaetrade.com/Markettracker/Dividend_Declared",
+#                                                  cookieStoreName="bcaps",
+#                                                  baseHtmlUrl="https://www.barodaetrade.com/Markettracker/Dividend_Declared",
+#                                                  htmlStoreName="bcaps")
+#     session.cookies.update(cookieHelper.cookies)
+
+# refreshNSECookies()
+# print(download('SBIN'))

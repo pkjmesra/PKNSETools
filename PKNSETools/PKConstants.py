@@ -28,6 +28,14 @@ from PKDevTools.classes.Utils import random_user_agent
 _base_domain = 'https://www.nseindia.com'
 _autoComplete_url_path = '/api/search/autocomplete?q={}'
 _quote_url_path= '/api/quote-equity?symbol={}'
+# Board meetings, corporate actions, financial results, latest announcements, shareholding patterns, 
+# https://www.nseindia.com/api/top-corp-info?symbol=SBIN&market=equities
+
+# Bulk block deals, market dept order book/bid/ask, security wise DP
+_quote_url_path_trade_info = f"{_quote_url_path}&section=trade_info&series=EQ"
+
+# Equity meta data
+# https://www.nseindia.com/api/equity-meta-info?symbol=SBIN
 _daily_report_url_path = '/api/merged-daily-reports?key=favCapital'
 _quote_url_path_html = '/get-quotes/equity?symbol={}'
 _historical_company_data_url_path_html = '/api/historical/cm/equity?symbol={}'

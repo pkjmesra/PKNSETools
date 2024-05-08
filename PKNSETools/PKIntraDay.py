@@ -32,6 +32,8 @@ from PKNSETools.PKConstants import (_base_domain, _chart_data_index_open_url,
                                     _chart_data_index_preopen_url,
                                     _chart_data_open_url,
                                     _chart_data_preopen_url, _head,
+                                    _quote_url_path_trade_info,
+                                    _quote_url_path,
                                     _quote_url_path_html)
 
 
@@ -40,12 +42,14 @@ class Intra_Day:
     session = None
     ticker = None
 
-    def __init__(self, ticker):
+    def __init__(self, ticker:str):
         self.baseNumber = 0
         self.session = requests.session()
-        self.ticker = ticker
-        self.session.get(f'{_base_domain}', headers=_head)
-        self.session.get(f'{_base_domain}{_quote_url_path_html}'.format(ticker), headers=_head)
+        self.ticker = ticker if ticker.upper().endswith("EQN") else f"{ticker}EQN"
+        self.symbol = self.ticker[0:-3]
+        # self.session.get(f'{_base_domain}', headers=_head)
+        if len(self.session.cookies.keys()) == 0:
+            self.session.get(f'{_base_domain}{_quote_url_path_html}'.format(ticker), headers=_head)
 
     def _secondsTotime(self, seconds):
         seconds = seconds % (24 * 3600)
@@ -123,6 +127,80 @@ class Intra_Day:
         resample_LTP = resample_LTP.reset_index(drop=False)
         return resample_LTP
 
+    def order_trade_info(self):
+        open_url = f'{_base_domain}{_quote_url_path_trade_info}'.format(self.symbol)
+        trade_df = None
+        try:
+            trade_info = self.session.get(url=open_url, headers=_head)
+            tradeInfoDict = trade_info.json()
+            mCap = tradeInfoDict["marketDeptOrderBook"]["tradeInfo"]["totalMarketCap"]
+            if mCap >= 1000000:
+                mCap = f"{int(mCap/1000000)}M"
+            elif mCap >= 1000:
+                mCap = f"{int(mCap/1000)}k"
+            ffmc = tradeInfoDict["marketDeptOrderBook"]["tradeInfo"]["ffmc"]
+            if ffmc >= 1000000:
+                ffmc = f"{int(ffmc/1000000)}M"
+            elif ffmc >= 1000:
+                ffmc = f"{int(ffmc/1000)}k"
+            tradeInfoDict = {
+                                "Stock": self.symbol,
+                                "BidQty": tradeInfoDict["marketDeptOrderBook"]["totalBuyQuantity"],
+                                "AskQty": tradeInfoDict["marketDeptOrderBook"]["totalSellQuantity"],
+                                "DayVola": tradeInfoDict["marketDeptOrderBook"]["tradeInfo"]["cmDailyVolatility"],
+                                "YrVola": tradeInfoDict["marketDeptOrderBook"]["tradeInfo"]["cmAnnualVolatility"],
+                                "MktCap(Cr)": mCap,
+                                "FFMCap(Cr)": ffmc,
+                                "DelQty": tradeInfoDict["securityWiseDP"]["deliveryQuantity"],
+                                "Del(%)": tradeInfoDict["securityWiseDP"]["deliveryToTradedQuantity"],
+                            }
+            trade_df = pd.DataFrame([tradeInfoDict])
+        except:
+            pass
+        return trade_df
+
+    def price_info(self):
+        get_details = f'{_base_domain}{_quote_url_path}'
+        trade_df = None
+        try:
+            info = self.session.get(url=get_details.format(self.symbol), headers=_head)
+            priceInfo = info.json()["priceInfo"]
+            priceInfoDict = {
+                "Stock": self.symbol,
+                "LTP": priceInfo["lastPrice"],
+                "%Chng": round(priceInfo["pChange"],2),
+                "VWAP": priceInfo["vwap"],
+                "LwrCP": priceInfo["lowerCP"],
+                "UprCP": priceInfo["upperCP"],
+            }
+            trade_df = pd.DataFrame([priceInfoDict])
+        except:
+            pass
+        return trade_df
+    
+    def price_order_info(self):
+        priceInfo = self.price_info()
+        tradeInfo = self.order_trade_info()
+        priceOrder_df = priceInfo.merge(tradeInfo, on='Stock', how='inner')
+        return priceOrder_df
+    
 # ID = Intra_Day('SBINEQN')
+# ti = ID.price_order_info()
+# print(ti)
+# ID.symbol = "BANKINDIA"
+# ti = ID.order_trade_info()
+# print(ti)
 # timeStamp, dataPoints,prices,ohlc = ID.nifty_intraDay()
 # print(ID.ohlc(prices))
+
+# import requests
+# import lxml.html
+
+# url = 'https://www.nseindia.com/get-quotes/equity?symbol=SBIN&series=EQ'
+
+# r = requests.get(url,headers=_head)
+# soup = lxml.html.fromstring(r.text)
+
+# items = soup.xpath('/html/body/div[11]/div/div/section/div/div/div/div/div/div[2]/div/div/div/div[2]/div/div[2]/div/div[1]/div/div[2]/div/div[1]/i/span')
+# #items = [x.text for x in items]
+# print(items)
