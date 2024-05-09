@@ -24,6 +24,7 @@
 
 """
 from datetime import datetime
+from mthrottle import Throttle
 
 import pandas as pd
 import requests
@@ -36,6 +37,13 @@ from PKNSETools.PKConstants import (_base_domain, _chart_data_index_open_url,
                                     _quote_url_path,
                                     _quote_url_path_html)
 
+throttleConfig = {
+    'default': {
+        'rps': 3,
+    },
+}
+MAX_PENALTY_COUNT = 6
+th = Throttle(throttleConfig, MAX_PENALTY_COUNT)
 
 class Intra_Day:
     baseNumber = None
@@ -132,6 +140,10 @@ class Intra_Day:
         trade_df = None
         try:
             trade_info = self.session.get(url=open_url, headers=_head)
+            if trade_info.status_code == 429 or trade_info.status_code == 403:
+                print(f"{trade_info.status_code}: {trade_info.text}")
+                if (th.penalize()):
+                    th.maxPenaltyCount += MAX_PENALTY_COUNT
             tradeInfoDict = trade_info.json()
             mCap = tradeInfoDict["marketDeptOrderBook"]["tradeInfo"]["totalMarketCap"]
             if mCap >= 1000000:
@@ -164,6 +176,10 @@ class Intra_Day:
         trade_df = None
         try:
             info = self.session.get(url=get_details.format(self.symbol), headers=_head)
+            if info.status_code == 429 or info.status_code == 403:
+                print(f"{info.status_code}: {info.text}")
+                if (th.penalize()):
+                    th.maxPenaltyCount += MAX_PENALTY_COUNT
             priceInfo = info.json()["priceInfo"]
             priceInfoDict = {
                 "Stock": self.symbol,
@@ -179,14 +195,19 @@ class Intra_Day:
         return trade_df
     
     def price_order_info(self):
+        th.check()
         priceInfo = self.price_info()
         tradeInfo = self.order_trade_info()
         priceOrder_df = priceInfo.merge(tradeInfo, on='Stock', how='inner')
         return priceOrder_df
-    
-# ID = Intra_Day('SBINEQN')
-# ti = ID.price_order_info()
-# print(ti)
+
+# i = 0
+# while i <= 100: 
+#     ID = Intra_Day('SBINEQN')
+#     ti = ID.price_order_info()
+#     print(ti)
+#     i += 1
+
 # ID.symbol = "BANKINDIA"
 # ti = ID.order_trade_info()
 # print(ti)
