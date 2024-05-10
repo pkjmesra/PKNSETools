@@ -23,6 +23,7 @@
     SOFTWARE.
 
 """
+from time import sleep
 from datetime import datetime
 from mthrottle import Throttle
 
@@ -143,6 +144,7 @@ class Intra_Day:
             if trade_info.status_code == 429 or trade_info.status_code == 403:
                 print(f"{trade_info.status_code}: {trade_info.text}")
                 if (th.penalize()):
+                    sleep(5)
                     th.maxPenaltyCount += MAX_PENALTY_COUNT
             tradeInfoDict = trade_info.json()
             mCap = tradeInfoDict["marketDeptOrderBook"]["tradeInfo"]["totalMarketCap"]
@@ -179,6 +181,7 @@ class Intra_Day:
             if info.status_code == 429 or info.status_code == 403:
                 print(f"{info.status_code}: {info.text}")
                 if (th.penalize()):
+                    sleep(5)
                     th.maxPenaltyCount += MAX_PENALTY_COUNT
             priceInfo = info.json()["priceInfo"]
             priceInfoDict = {
@@ -196,6 +199,8 @@ class Intra_Day:
     
     def price_order_info(self):
         th.check()
+        if th._penaltyCount >= MAX_PENALTY_COUNT:
+            return None
         priceInfo = self.price_info()
         tradeInfo = self.order_trade_info()
         priceOrder_df = priceInfo.merge(tradeInfo, on='Stock', how='inner')
