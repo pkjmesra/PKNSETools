@@ -138,7 +138,18 @@ class Intra_Day:
 
     def order_trade_info(self):
         open_url = f'{_base_domain}{_quote_url_path_trade_info}'.format(self.symbol)
-        trade_df = None
+        tradeInfoDict = {
+                            "Stock": self.symbol,
+                            "BidQty": 0,
+                            "AskQty": 0,
+                            "DayVola": 0,
+                            "YrVola": 0,
+                            "MktCap(Cr)": 0,
+                            "FFMCap(Cr)": 0,
+                            "DelQty": 0,
+                            "Del(%)": 0,
+                        }
+        trade_df = pd.DataFrame([tradeInfoDict])
         try:
             trade_info = self.session.get(url=open_url, headers=_head)
             if trade_info.status_code == 429 or trade_info.status_code == 403:
@@ -175,7 +186,15 @@ class Intra_Day:
 
     def price_info(self):
         get_details = f'{_base_domain}{_quote_url_path}'
-        trade_df = None
+        priceInfoDict = {
+                "Stock": self.symbol,
+                "LTP": 0,
+                "%Chng": 0,
+                "VWAP": 0,
+                "LwrCP": 0,
+                "UprCP": 0,
+            }
+        trade_df = pd.DataFrame([priceInfoDict])
         try:
             info = self.session.get(url=get_details.format(self.symbol), headers=_head)
             if info.status_code == 429 or info.status_code == 403:
@@ -199,11 +218,15 @@ class Intra_Day:
     
     def price_order_info(self):
         th.check()
+        priceOrder_df = None
         if th._penaltyCount >= MAX_PENALTY_COUNT:
             return None
         priceInfo = self.price_info()
         tradeInfo = self.order_trade_info()
-        priceOrder_df = priceInfo.merge(tradeInfo, on='Stock', how='inner')
+        if priceInfo is not None:
+            priceOrder_df = priceInfo.merge(tradeInfo, on='Stock', how='inner')
+        elif tradeInfo is not None:
+            priceOrder_df
         return priceOrder_df
 
 # i = 0
