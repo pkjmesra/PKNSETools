@@ -58,7 +58,7 @@ class Intra_Day:
         self.symbol = self.ticker[0:-3]
         # self.session.get(f'{_base_domain}', headers=_head)
         if len(self.session.cookies.keys()) == 0:
-            self.session.get(f'{_base_domain}{_quote_url_path_html}'.format(ticker), headers=_head)
+            self.session.get(f'{_base_domain}{_quote_url_path_html}'.format(ticker), headers=_head, timeout=10)
 
     def _secondsTotime(self, seconds):
         seconds = seconds % (24 * 3600)
