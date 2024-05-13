@@ -79,7 +79,8 @@ class nseStockDataFetcher(fetcher):
         url = tickerMapping.get(tickerOption)
 
         try:
-            res = self.fetchURL(url)
+            headers = {"user-agent": random_user_agent()}
+            res = self.fetchURL(url,headers=headers,timeout=10)
             if res is None or res.status_code != 200:
                 return listStockCodes
             cr = csv.reader(res.text.strip().split("\n"))
