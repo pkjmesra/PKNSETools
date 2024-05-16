@@ -43,7 +43,7 @@ from PKDevTools.classes.OutputControls import OutputControls
 from PKNSETools.Benny.NSE import NSE
 from PKDevTools.classes.Utils import random_user_agent
 
-INDEX_MAP = {
+NSE_INDEX_MAP = {
     1: "https://archives.nseindia.com/content/indices/ind_nifty50list.csv",
     2: "https://archives.nseindia.com/content/indices/ind_niftynext50list.csv",
     3: "https://archives.nseindia.com/content/indices/ind_nifty100list.csv",
@@ -58,6 +58,21 @@ INDEX_MAP = {
     12: "https://archives.nseindia.com/content/equities/EQUITY_L.csv",
     14: "https://archives.nseindia.com/content/fo/fo_mktlots.csv",
 }
+REPO_INDEX_MAP = {
+    1: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_nifty50list.csv",
+    2: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_niftynext50list.csv",
+    3: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_nifty100list.csv",
+    4: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_nifty200list.csv",
+    5: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_nifty500list.csv",
+    6: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_niftysmallcap50list.csv",
+    7: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_niftysmallcap100list.csv",
+    8: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_niftysmallcap250list.csv",
+    9: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_niftymidcap50list.csv",
+    10: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_niftymidcap100list.csv",
+    11: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_niftymidcap150list.csv",
+    12: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/EQUITY_L.csv",
+    14: "https://archives.nseindia.com/content/fo/fo_mktlots.csv",
+}
 
 # This Class Handles Fetching of Stock Data over the internet from NSE/BSE
 
@@ -67,9 +82,9 @@ class nseStockDataFetcher(fetcher):
         data, filePath, modifiedDateTime = Archiver.findFileInAppResultsDirectory(fileName=fileName)
         return data, filePath, modifiedDateTime
 
-    def fetchFileFromHostServer(self,filePath,tickerOption,fileContents):
+    def fetchFileFromHostServer(self,filePath,tickerOption,fileContents,indexMap=NSE_INDEX_MAP):
         try:
-            url = INDEX_MAP.get(tickerOption)
+            url = indexMap.get(tickerOption)
             fileName = url.split("/")[-1]
             headers = {"user-agent": random_user_agent()}
             res = self.fetchURL(url,headers=headers,timeout=10)
@@ -85,7 +100,7 @@ class nseStockDataFetcher(fetcher):
 
     def fetchNiftyCodes(self, tickerOption):
         listStockCodes = []
-        url = INDEX_MAP.get(tickerOption)
+        url = NSE_INDEX_MAP.get(tickerOption)
         fileName = url.split("/")[-1]
         fileContents, filePath, modifiedDateTime = self.savedFileContents(fileName)
         shouldFetch = fileContents is None or (fileContents is not None and PKDateUtilities.currentDateTime().date() > modifiedDateTime.date())
@@ -93,7 +108,10 @@ class nseStockDataFetcher(fetcher):
         if shouldFetch:
             fileContents = self.fetchFileFromHostServer(filePath,tickerOption,fileContents)
         if fileContents is None:
-            return listStockCodes
+            # Try and get it from our own repo
+            fileContents = self.fetchFileFromHostServer(filePath,tickerOption,fileContents,REPO_INDEX_MAP)
+            if fileContents is None:
+                return listStockCodes
 
         if tickerOption == 12:
             try:
