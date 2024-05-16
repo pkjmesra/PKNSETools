@@ -256,22 +256,27 @@ class nseStockDataFetcher(fetcher):
         # isClosed = now < todayOpen and now < todayClose
         isOpen = now >= todayOpen and todayClose >= now
         status = "Open" if isOpen else "Closed"
-        lastPrice = round(basicInfo["last_price"],2)
-        prevClose = round(basicInfo["regular_market_previous_close"],2)
-        if not pd.notna(prevClose):
-            prevClose = md["previousClose"] if "previousClose" in md.keys() else prevClose
+        marketStatusLong = ""
+        tradeDate = ""
+        try:
+            lastPrice = round(basicInfo["last_price"],2)
+            prevClose = round(basicInfo["regular_market_previous_close"],2)
             if not pd.notna(prevClose):
-                prevClose = info["previousClose"] if "previousClose" in info.keys() else prevClose
+                prevClose = md["previousClose"] if "previousClose" in md.keys() else prevClose
                 if not pd.notna(prevClose):
-                    prevClose = info["regularMarketPreviousClose"] if "regularMarketPreviousClose" in info.keys() else prevClose
-        change = round(lastPrice - prevClose,2)
-        pctChange = round(100*change/prevClose,2)
-        tradeDate = lastTradeDate.strftime("%Y-%m-%d")
-        
-        if len(status) > 0:
-            change = ((colorText.GREEN +"▲")if change >=0 else colorText.FAIL+"▼") + str(change if pd.notna(change) else "?") + colorText.END
-            pctChange = (colorText.GREEN if pctChange >=0 else colorText.FAIL) + str(pctChange if pd.notna(pctChange) else "?") + colorText.END
-            marketStatusLong = f'{info["longName"]} | {status} | {tradeDate} | {lastPrice} | {change} ({pctChange}%)'
+                    prevClose = info["previousClose"] if "previousClose" in info.keys() else prevClose
+                    if not pd.notna(prevClose):
+                        prevClose = info["regularMarketPreviousClose"] if "regularMarketPreviousClose" in info.keys() else prevClose
+            change = round(lastPrice - prevClose,2)
+            pctChange = round(100*change/prevClose,2)
+            tradeDate = lastTradeDate.strftime("%Y-%m-%d")
+            
+            if len(status) > 0:
+                change = ((colorText.GREEN +"▲")if change >=0 else colorText.FAIL+"▼") + str(change if pd.notna(change) else "?") + colorText.END
+                pctChange = (colorText.GREEN if pctChange >=0 else colorText.FAIL) + str(pctChange if pd.notna(pctChange) else "?") + colorText.END
+                marketStatusLong = f'{info["longName"]} | {status} | {tradeDate} | {lastPrice} | {change} ({pctChange}%)'
+        except:
+            pass
         return status, marketStatusLong,tradeDate
 
 # f = nseStockDataFetcher()
