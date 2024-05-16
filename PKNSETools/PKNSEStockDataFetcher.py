@@ -43,48 +43,67 @@ from PKDevTools.classes.OutputControls import OutputControls
 from PKNSETools.Benny.NSE import NSE
 from PKDevTools.classes.Utils import random_user_agent
 
+INDEX_MAP = {
+    1: "https://archives.nseindia.com/content/indices/ind_nifty50list.csv",
+    2: "https://archives.nseindia.com/content/indices/ind_niftynext50list.csv",
+    3: "https://archives.nseindia.com/content/indices/ind_nifty100list.csv",
+    4: "https://archives.nseindia.com/content/indices/ind_nifty200list.csv",
+    5: "https://archives.nseindia.com/content/indices/ind_nifty500list.csv",
+    6: "https://archives.nseindia.com/content/indices/ind_niftysmallcap50list.csv",
+    7: "https://archives.nseindia.com/content/indices/ind_niftysmallcap100list.csv",
+    8: "https://archives.nseindia.com/content/indices/ind_niftysmallcap250list.csv",
+    9: "https://archives.nseindia.com/content/indices/ind_niftymidcap50list.csv",
+    10: "https://archives.nseindia.com/content/indices/ind_niftymidcap100list.csv",
+    11: "https://archives.nseindia.com/content/indices/ind_niftymidcap150list.csv",
+    12: "https://archives.nseindia.com/content/equities/EQUITY_L.csv",
+    14: "https://archives.nseindia.com/content/fo/fo_mktlots.csv",
+}
+
 # This Class Handles Fetching of Stock Data over the internet from NSE/BSE
 
 class nseStockDataFetcher(fetcher):
 
+    def savedFileContents(self, fileName=None):
+        data, filePath, modifiedDateTime = Archiver.findFileInAppResultsDirectory(fileName=fileName)
+        return data, filePath, modifiedDateTime
+
+    def fetchFileFromHostServer(self,filePath,tickerOption,fileContents):
+        try:
+            url = INDEX_MAP.get(tickerOption)
+            fileName = url.split("/")[-1]
+            headers = {"user-agent": random_user_agent()}
+            res = self.fetchURL(url,headers=headers,timeout=10)
+            if res is None or res.status_code != 200:
+                default_logger().debug(f"Response for tickerOption:{tickerOption}, file:{fileName}: {res}")
+            else:
+                fileContents = res.text
+                with open(filePath, "w") as f:
+                    f.write(fileContents)
+        except:
+            pass
+        return fileContents
+
     def fetchNiftyCodes(self, tickerOption):
         listStockCodes = []
+        url = INDEX_MAP.get(tickerOption)
+        fileName = url.split("/")[-1]
+        fileContents, filePath, modifiedDateTime = self.savedFileContents(fileName)
+        shouldFetch = fileContents is None or (fileContents is not None and PKDateUtilities.currentDateTime().date() > modifiedDateTime.date())
+        OutputControls().printOutput(colorText.BOLD + f"[+] {(len(fileContents.splitlines())-1) if fileContents is not None else 0} stocks loaded from local cache. {'Getting Stock Codes From NSE...' if shouldFetch else ''}")
+        if shouldFetch:
+            fileContents = self.fetchFileFromHostServer(filePath,tickerOption,fileContents)
+        if fileContents is None:
+            return listStockCodes
+
         if tickerOption == 12:
-            url = "https://archives.nseindia.com/content/equities/EQUITY_L.csv"
-            res = self.fetchURL(url)
-            if res is None or res.status_code != 200:
-                return listStockCodes
             try:
-                data = pd.read_csv(StringIO(res.text))
+                data = pd.read_csv(StringIO(fileContents))
                 return list(data["SYMBOL"].values)
             except Exception as e:
                 default_logger().debug(e, exc_info=True)
                 return listStockCodes
-            
-        tickerMapping = {
-            1: "https://archives.nseindia.com/content/indices/ind_nifty50list.csv",
-            2: "https://archives.nseindia.com/content/indices/ind_niftynext50list.csv",
-            3: "https://archives.nseindia.com/content/indices/ind_nifty100list.csv",
-            4: "https://archives.nseindia.com/content/indices/ind_nifty200list.csv",
-            5: "https://archives.nseindia.com/content/indices/ind_nifty500list.csv",
-            6: "https://archives.nseindia.com/content/indices/ind_niftysmallcap50list.csv",
-            7: "https://archives.nseindia.com/content/indices/ind_niftysmallcap100list.csv",
-            8: "https://archives.nseindia.com/content/indices/ind_niftysmallcap250list.csv",
-            9: "https://archives.nseindia.com/content/indices/ind_niftymidcap50list.csv",
-            10: "https://archives.nseindia.com/content/indices/ind_niftymidcap100list.csv",
-            11: "https://archives.nseindia.com/content/indices/ind_niftymidcap150list.csv",
-            14: "https://archives.nseindia.com/content/fo/fo_mktlots.csv",
-        }
-
-        url = tickerMapping.get(tickerOption)
-
         try:
-            headers = {"user-agent": random_user_agent()}
-            res = self.fetchURL(url,headers=headers,timeout=10)
-            if res is None or res.status_code != 200:
-                return listStockCodes
-            cr = csv.reader(res.text.strip().split("\n"))
-
+            cr = csv.reader(fileContents.strip().split("\n"))
             if tickerOption == 14:
                 for i in range(5):
                     next(cr)  # skipping first line
@@ -96,6 +115,7 @@ class nseStockDataFetcher(fetcher):
                     listStockCodes.append(row[2])
         except Exception as e:
             default_logger().debug(e, exc_info=True)
+            pass
 
         return listStockCodes
 
@@ -115,7 +135,6 @@ class nseStockDataFetcher(fetcher):
             stockCode = stockCode.replace(" ", "")
             listStockCodes = stockCode.split(",")
         else:
-            OutputControls().printOutput(colorText.BOLD + "[+] Getting Stock Codes From NSE... ")
             listStockCodes = self.fetchNiftyCodes(tickerOption)
             if len(listStockCodes) > 10:
                 OutputControls().printOutput(
