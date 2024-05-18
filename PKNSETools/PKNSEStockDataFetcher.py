@@ -22,6 +22,7 @@
     SOFTWARE.
 
 """
+import os
 import csv
 import datetime
 import pytz
@@ -56,7 +57,7 @@ NSE_INDEX_MAP = {
     10: "https://archives.nseindia.com/content/indices/ind_niftymidcap100list.csv",
     11: "https://archives.nseindia.com/content/indices/ind_niftymidcap150list.csv",
     12: "https://archives.nseindia.com/content/equities/EQUITY_L.csv",
-    14: "https://archives.nseindia.com/content/fo/fo_mktlots.csv",
+    14: "https://nsearchives.nseindia.com/content/fo/NSE_FO_SosScheme.csv",
 }
 REPO_INDEX_MAP = {
     1: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_nifty50list.csv",
@@ -71,12 +72,22 @@ REPO_INDEX_MAP = {
     10: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_niftymidcap100list.csv",
     11: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_niftymidcap150list.csv",
     12: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/EQUITY_L.csv",
-    14: "https://archives.nseindia.com/content/fo/fo_mktlots.csv",
+    14: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/NSE_FO_SosScheme.csv",
 }
 
 # This Class Handles Fetching of Stock Data over the internet from NSE/BSE
 
 class nseStockDataFetcher(fetcher):
+
+    def saveAllNSEIndices(self):
+        for tickerOption in NSE_INDEX_MAP.keys():
+            try:
+                url = NSE_INDEX_MAP.get(tickerOption)
+                fileName = url.split("/")[-1]
+                filePath = os.path.join(Archiver.get_user_outputs_dir(),fileName)
+                self.fetchFileFromHostServer(filePath,tickerOption,"")
+            except:
+                continue
 
     def savedFileContents(self, fileName=None):
         data, filePath, modifiedDateTime = Archiver.findFileInAppResultsDirectory(fileName=fileName)
@@ -123,10 +134,11 @@ class nseStockDataFetcher(fetcher):
         try:
             cr = csv.reader(fileContents.strip().split("\n"))
             if tickerOption == 14:
-                for i in range(5):
-                    next(cr)  # skipping first line
+                for i in range(2):
+                    next(cr)  # skipping first two lines
                 for row in cr:
-                    listStockCodes.append(row[1])
+                    listStockCodes.append(row[0])
+                listStockCodes = sorted(list(filter(None,list(set(listStockCodes)))))
             else:
                 next(cr)  # skipping first line
                 for row in cr:
