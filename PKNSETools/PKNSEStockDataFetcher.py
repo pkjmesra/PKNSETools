@@ -60,19 +60,19 @@ NSE_INDEX_MAP = {
     14: "https://nsearchives.nseindia.com/content/fo/NSE_FO_SosScheme.csv",
 }
 REPO_INDEX_MAP = {
-    1: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_nifty50list.csv",
-    2: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_niftynext50list.csv",
-    3: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_nifty100list.csv",
-    4: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_nifty200list.csv",
-    5: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_nifty500list.csv",
-    6: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_niftysmallcap50list.csv",
-    7: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_niftysmallcap100list.csv",
-    8: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_niftysmallcap250list.csv",
-    9: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_niftymidcap50list.csv",
-    10: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_niftymidcap100list.csv",
-    11: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/ind_niftymidcap150list.csv",
-    12: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/EQUITY_L.csv",
-    14: "https://raw.githubusercontent.com/pkjmesra/PKScreener/main/results/NSE_FO_SosScheme.csv",
+    1: "https://raw.githubusercontent.com/pkjmesra/PKScreener/actions-data-download/results/ind_nifty50list.csv",
+    2: "https://raw.githubusercontent.com/pkjmesra/PKScreener/actions-data-download/results/ind_niftynext50list.csv",
+    3: "https://raw.githubusercontent.com/pkjmesra/PKScreener/actions-data-download/results/ind_nifty100list.csv",
+    4: "https://raw.githubusercontent.com/pkjmesra/PKScreener/actions-data-download/results/ind_nifty200list.csv",
+    5: "https://raw.githubusercontent.com/pkjmesra/PKScreener/actions-data-download/results/ind_nifty500list.csv",
+    6: "https://raw.githubusercontent.com/pkjmesra/PKScreener/actions-data-download/results/ind_niftysmallcap50list.csv",
+    7: "https://raw.githubusercontent.com/pkjmesra/PKScreener/actions-data-download/results/ind_niftysmallcap100list.csv",
+    8: "https://raw.githubusercontent.com/pkjmesra/PKScreener/actions-data-download/results/ind_niftysmallcap250list.csv",
+    9: "https://raw.githubusercontent.com/pkjmesra/PKScreener/actions-data-download/results/ind_niftymidcap50list.csv",
+    10: "https://raw.githubusercontent.com/pkjmesra/PKScreener/actions-data-download/results/ind_niftymidcap100list.csv",
+    11: "https://raw.githubusercontent.com/pkjmesra/PKScreener/actions-data-download/results/ind_niftymidcap150list.csv",
+    12: "https://raw.githubusercontent.com/pkjmesra/PKScreener/actions-data-download/results/EQUITY_L.csv",
+    14: "https://raw.githubusercontent.com/pkjmesra/PKScreener/actions-data-download/results/NSE_FO_SosScheme.csv",
 }
 
 # This Class Handles Fetching of Stock Data over the internet from NSE/BSE
