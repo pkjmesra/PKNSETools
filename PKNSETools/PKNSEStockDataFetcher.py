@@ -278,6 +278,7 @@ class nseStockDataFetcher(fetcher):
             info = {"longName":exchange}
             pass
         try:
+            ticker._lazy_load_price_history()._history_metadata["period"] = '5d' # Ignore the yfinance exception for period being 1wk.
             md = ticker.get_history_metadata()
             ltd = md["regularMarketTime"]
             ctp = md["currentTradingPeriod"]
