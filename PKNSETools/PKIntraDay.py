@@ -29,6 +29,7 @@ from mthrottle import Throttle
 
 import pandas as pd
 import requests
+from PKDevTools.classes.OutputControls import OutputControls
 
 from PKNSETools.PKConstants import (_base_domain, _chart_data_index_open_url,
                                     _chart_data_index_preopen_url,
@@ -43,7 +44,8 @@ throttleConfig = {
         'rps': 3,
     },
 }
-MAX_PENALTY_COUNT = 6
+MAX_PENALTY_COUNT = 1
+MIN_PENALTY_WAIT_SECONDS = 10
 th = Throttle(throttleConfig, MAX_PENALTY_COUNT)
 
 class Intra_Day:
@@ -153,9 +155,9 @@ class Intra_Day:
         try:
             trade_info = self.session.get(url=open_url, headers=_head)
             if trade_info.status_code == 429 or trade_info.status_code == 403:
-                print(f"{trade_info.status_code}: {trade_info.text}")
+                OutputControls().printOutput(f"{trade_info.status_code}: {trade_info.text}")
                 if (th.penalize()):
-                    sleep(5)
+                    sleep(MIN_PENALTY_WAIT_SECONDS)
                     th.maxPenaltyCount += MAX_PENALTY_COUNT
             tradeInfoDict = trade_info.json()
             mCap = tradeInfoDict["marketDeptOrderBook"]["tradeInfo"]["totalMarketCap"]
@@ -198,9 +200,9 @@ class Intra_Day:
         try:
             info = self.session.get(url=get_details.format(self.symbol), headers=_head)
             if info.status_code == 429 or info.status_code == 403:
-                print(f"{info.status_code}: {info.text}")
+                OutputControls().printOutput(f"{info.status_code}: {info.text}")
                 if (th.penalize()):
-                    sleep(5)
+                    sleep(MIN_PENALTY_WAIT_SECONDS)
                     th.maxPenaltyCount += MAX_PENALTY_COUNT
             priceInfo = info.json()["priceInfo"]
             priceInfoDict = {
