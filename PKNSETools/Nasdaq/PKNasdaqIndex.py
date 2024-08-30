@@ -43,6 +43,7 @@ class PKNasdaqIndexFetcher(fetcher):
         
         url = "https://api.nasdaq.com/api/screener/stocks?tableonly=true&limit=25&offset=0&download=true"
         res = self.fetchURL(url, headers=self.defaultHeaders)
+        df = None
         if res is None or res.status_code != 200:
             return listStockCodes
         try:
