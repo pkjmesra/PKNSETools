@@ -53,7 +53,7 @@ class PKNasdaqIndexFetcher(fetcher):
                     rows = data["rows"]
                     if len(rows) > 0:
                         df = pd.DataFrame(rows)
-                        return list(df["symbol"].values)
+                        return list(df["symbol"].values), df
         except Exception as e:
             default_logger().debug(e, exc_info=True)
         return listStockCodes,df
