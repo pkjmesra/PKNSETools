@@ -24,15 +24,27 @@
 
 """
 import json
+from time import sleep
 from collections import namedtuple
+from mthrottle import Throttle
 
 import requests
 # from PKDevTools.classes.CookieHelper import CookieHelper
 # from PKDevTools.classes import Archiver
 from PKNSETools.PKConstants import (_autoComplete_url_path, _base_domain,
                                     _head, _quote_url_path)
+from PKDevTools.classes.OutputControls import OutputControls
 
 session = requests.session()
+
+throttleConfig = {
+    'default': {
+        'rps': 3,
+    },
+}
+MAX_PENALTY_COUNT = 1
+MIN_PENALTY_WAIT_SECONDS = 10
+th = Throttle(throttleConfig, MAX_PENALTY_COUNT)
 
 def _get_Tuple_From_JSON(companyDict):
     return namedtuple('X', companyDict.keys())(*companyDict.values())
@@ -123,7 +135,13 @@ def get_Search_Results_By_Name(name):
 def download(symbol):
     get_details = f'{_base_domain}{_quote_url_path}'
     company_details = session.get(url=get_details.format(symbol), headers=_head)
-    text = str(company_details.json()).replace("'","\"").replace('True','true').replace('False','false').replace('None','null')
+    if company_details.status_code == 429 or company_details.status_code == 403:
+        OutputControls().printOutput(f"{company_details.status_code}: {company_details.text}")
+        if (th.penalize()):
+            sleep(MIN_PENALTY_WAIT_SECONDS)
+            th.maxPenaltyCount += MAX_PENALTY_COUNT
+    if company_details.status_code == 200:
+        text = str(company_details.json()).replace("'","\"").replace('True','true').replace('False','false').replace('None','null')
     # '{"info": {
     #       "symbol": "SBIN", 
     #       "companyName": "State Bank of India", 
@@ -196,7 +214,7 @@ def download(symbol):
     #                   "atoBuyQty": 10667, 
     #                   "atoSellQty": 1621}
     # }'
-    companyDetails = json.loads(text, object_hook=_get_Tuple_From_JSON)
+        companyDetails = json.loads(text, object_hook=_get_Tuple_From_JSON)
     return companyDetails
 
 def get_Company_Details_By_Name(name):
@@ -213,4 +231,4 @@ def get_Company_Details_By_Name(name):
 #     session.cookies.update(cookieHelper.cookies)
 
 # refreshNSECookies()
-# print(download('SBIN'))
+print(download('NH'))
