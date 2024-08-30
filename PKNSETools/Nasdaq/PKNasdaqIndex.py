@@ -56,7 +56,7 @@ class PKNasdaqIndexFetcher(fetcher):
                         return list(df["symbol"].values)
         except Exception as e:
             default_logger().debug(e, exc_info=True)
-        return listStockCodes
+        return listStockCodes,df
 
     def refreshTokens(self):
             if self.cookieHelper is None:
