@@ -46,6 +46,9 @@ MAX_PENALTY_COUNT = 1
 MIN_PENALTY_WAIT_SECONDS = 10
 th = Throttle(throttleConfig, MAX_PENALTY_COUNT)
 
+def initialize():
+    refreshNSECookies()
+    
 def _get_Tuple_From_JSON(companyDict):
     return namedtuple('X', companyDict.keys())(*companyDict.values())
 
