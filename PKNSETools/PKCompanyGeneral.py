@@ -29,8 +29,9 @@ from collections import namedtuple
 from mthrottle import Throttle
 
 import requests
-# from PKDevTools.classes.CookieHelper import CookieHelper
-# from PKDevTools.classes import Archiver
+from PKNSETools import NSE
+from PKDevTools.classes.CookieHelper import CookieHelper
+from PKDevTools.classes import Archiver
 from PKNSETools.PKConstants import (_autoComplete_url_path, _base_domain,
                                     _head, _quote_url_path)
 from PKDevTools.classes.OutputControls import OutputControls
@@ -132,9 +133,13 @@ def get_Search_Results_By_Name(name):
     search_result = json.loads(str(search_results.json()).replace("'","\""), object_hook=_get_Tuple_From_JSON)
     return search_result
 
-def download(symbol):
+def download(symbol, trialCount=0):
     get_details = f'{_base_domain}{_quote_url_path}'
     company_details = session.get(url=get_details.format(symbol), headers=_head)
+    if company_details.status_code == 401 and trialCount <=2:
+        refreshNSECookies()
+        return download(symbol,trialCount=trialCount+1)
+        
     if company_details.status_code == 429 or company_details.status_code == 403:
         OutputControls().printOutput(f"{company_details.status_code}: {company_details.text}")
         if (th.penalize()):
@@ -222,13 +227,10 @@ def get_Company_Details_By_Name(name):
     symbol = search_results.symbols[0].symbol
     return download(symbol)
     
-# def refreshNSECookies():
-#     cookieHelper = CookieHelper(download_folder=Archiver.get_user_outputs_dir(),
-#                                                  baseCookieUrl="https://www.barodaetrade.com/Markettracker/Dividend_Declared",
-#                                                  cookieStoreName="bcaps",
-#                                                  baseHtmlUrl="https://www.barodaetrade.com/Markettracker/Dividend_Declared",
-#                                                  htmlStoreName="bcaps")
-#     session.cookies.update(cookieHelper.cookies)
-
-# refreshNSECookies()
-# print(download('NH'))
+def refreshNSECookies():
+    cookieHelper = CookieHelper(download_folder=Archiver.get_user_outputs_dir(),
+                                                 baseCookieUrl="https://www.nseindia.com/option-chain",
+                                                 cookieStoreName="nses",
+                                                 baseHtmlUrl="https://www.nseindia.com/option-chain",
+                                                 htmlStoreName="nses")
+    session.cookies.update(cookieHelper.cookies)
