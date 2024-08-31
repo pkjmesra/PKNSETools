@@ -29,7 +29,6 @@ from collections import namedtuple
 from mthrottle import Throttle
 
 import requests
-from PKNSETools import NSE
 from PKDevTools.classes.CookieHelper import CookieHelper
 from PKDevTools.classes import Archiver
 from PKNSETools.PKConstants import (_autoComplete_url_path, _base_domain,
