@@ -27,10 +27,10 @@ import json
 from time import sleep
 from collections import namedtuple
 from mthrottle import Throttle
-
+from PKNSETools.Benny import NSE
 import requests
-from PKDevTools.classes.CookieHelper import CookieHelper
 from PKDevTools.classes import Archiver
+
 from PKNSETools.PKConstants import (_autoComplete_url_path, _base_domain,
                                     _head, _quote_url_path)
 from PKDevTools.classes.OutputControls import OutputControls
@@ -47,7 +47,7 @@ MIN_PENALTY_WAIT_SECONDS = 10
 th = Throttle(throttleConfig, MAX_PENALTY_COUNT)
 
 def initialize():
-    refreshNSECookies()
+    session = NSE(download_folder=Archiver.get_user_outputs_dir()).session
     
 def _get_Tuple_From_JSON(companyDict):
     return namedtuple('X', companyDict.keys())(*companyDict.values())
@@ -139,10 +139,9 @@ def download(symbolOrTask, trialCount=0):
     get_details = f'{_base_domain}{_quote_url_path}'
     symbol = symbolOrTask
     if not isinstance(symbolOrTask, str):
-        symbol = symbolOrTask.userData
-    company_details = session.get(url=get_details.format(symbol), headers=_head)
+        symbol = symbolOrTask.userData    
+    company_details = NSE(download_folder=Archiver.get_user_outputs_dir()).session.get(url=get_details.format(symbol), headers=_head)
     if company_details.status_code == 401 and trialCount <=2:
-        refreshNSECookies()
         return download(symbolOrTask,trialCount=trialCount+1)
         
     if company_details.status_code == 429 or company_details.status_code == 403:
@@ -244,11 +243,3 @@ def get_Company_Details_By_Name(name):
     search_results = get_Search_Results_By_Name(name)
     symbol = search_results.symbols[0].symbol
     return download(symbol)
-    
-def refreshNSECookies():
-    cookieHelper = CookieHelper(download_folder=Archiver.get_user_outputs_dir(),
-                                                 baseCookieUrl="https://www.nseindia.com/option-chain",
-                                                 cookieStoreName="nses",
-                                                 baseHtmlUrl="https://www.nseindia.com/option-chain",
-                                                 htmlStoreName="nses")
-    session.cookies.update(cookieHelper.cookies)
