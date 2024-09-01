@@ -135,12 +135,15 @@ def get_Search_Results_By_Name(name):
     search_result = json.loads(str(search_results.json()).replace("'","\""), object_hook=_get_Tuple_From_JSON)
     return search_result
 
-def download(symbol, trialCount=0):
+def download(symbolOrTask, trialCount=0):
     get_details = f'{_base_domain}{_quote_url_path}'
+    symbol = symbolOrTask
+    if not isinstance(symbolOrTask, str):
+        symbol = symbolOrTask.userData
     company_details = session.get(url=get_details.format(symbol), headers=_head)
     if company_details.status_code == 401 and trialCount <=2:
         refreshNSECookies()
-        return download(symbol,trialCount=trialCount+1)
+        return download(symbolOrTask,trialCount=trialCount+1)
         
     if company_details.status_code == 429 or company_details.status_code == 403:
         OutputControls().printOutput(f"{company_details.status_code}: {company_details.text}")
@@ -148,7 +151,13 @@ def download(symbol, trialCount=0):
             sleep(MIN_PENALTY_WAIT_SECONDS)
             th.maxPenaltyCount += MAX_PENALTY_COUNT
     if company_details.status_code == 200:
+        # try:
+        #     # Let's try without any conversions first
+        #     companyDetails = json.loads(company_details.text, object_hook=_get_Tuple_From_JSON)
+        # except:
         text = str(company_details.json()).replace("'","\"").replace('True','true').replace('False','false').replace('None','null')
+        companyDetails = json.loads(text, object_hook=_get_Tuple_From_JSON)
+            # pass
     # '{"info": {
     #       "symbol": "SBIN", 
     #       "companyName": "State Bank of India", 
@@ -221,7 +230,14 @@ def download(symbol, trialCount=0):
     #                   "atoBuyQty": 10667, 
     #                   "atoSellQty": 1621}
     # }'
-        companyDetails = json.loads(text, object_hook=_get_Tuple_From_JSON)
+    if not isinstance(symbolOrTask, str):
+        result = company_details.text
+        if symbolOrTask.taskId > 0:
+            symbolOrTask.progressStatusDict[symbolOrTask.taskId] = {'progress': 0, 'total': 1}
+            symbolOrTask.resultsDict[symbolOrTask.taskId] = result
+            symbolOrTask.progressStatusDict[symbolOrTask.taskId] = {'progress': 1, 'total': 1}
+        else:
+            symbolOrTask.result = result
     return companyDetails
 
 def get_Company_Details_By_Name(name):
