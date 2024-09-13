@@ -326,7 +326,7 @@ class nseStockDataFetcher(fetcher):
             tradeDate = lastTradeDate.strftime("%Y-%m-%d")
             
             if len(status) > 0:
-                change = ((colorText.GREEN +"▲")if change >=0 else colorText.FAIL+"▼") + str(change if pd.notna(change) else "?") + colorText.END
+                change = ((colorText.GREEN +colorText.UPARROW)if change >=0 else colorText.FAIL+colorText.DOWNARROW) + str(change if pd.notna(change) else "?") + colorText.END
                 pctChange = (colorText.GREEN if pctChange >=0 else colorText.FAIL) + str(pctChange if pd.notna(pctChange) else "?") + colorText.END
                 marketStatusLong = f'{info["longName"]} | {status} | {tradeDate} | {lastPrice} | {change} ({pctChange}%)'
         except:
