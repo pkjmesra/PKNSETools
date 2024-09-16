@@ -61,7 +61,7 @@ class PKNasdaqIndexFetcher(fetcher):
 
     def refreshTokens(self):
             if self.cookieHelper is None:
-                self.cookieHelper = CookieHelper(download_folder=Archiver.get_user_outputs_dir(),
+                self.cookieHelper = CookieHelper(download_folder=Archiver.get_user_cookies_dir(),
                                                     baseCookieUrl="https://www.nasdaq.com/market-activity/stocks/screener",
                                                     cookieStoreName="nda",
                                                     baseHtmlUrl="https://www.nasdaq.com/market-activity/stocks/screener",

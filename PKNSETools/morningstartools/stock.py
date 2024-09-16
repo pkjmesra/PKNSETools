@@ -709,7 +709,7 @@ class Stock(Security):
 
     def refreshMorningstarTokens(self, params, headers):
         if self.cookieHelper is None:
-            self.cookieHelper = CookieHelper(download_folder=Archiver.get_user_outputs_dir(),
+            self.cookieHelper = CookieHelper(download_folder=Archiver.get_user_cookies_dir(),
                                                  baseCookieUrl="https://morningstar.in/stocks/0p0000c3nz/nse-hdfc-bank-ltd/overview.aspx",
                                                  cookieStoreName="msta",
                                                  baseHtmlUrl="https://morningstar.in/stocks/0p0000c3nz/nse-hdfc-bank-ltd/overview.aspx",

@@ -84,7 +84,7 @@ class nseStockDataFetcher(fetcher):
             try:
                 url = NSE_INDEX_MAP.get(tickerOption)
                 fileName = url.split("/")[-1]
-                filePath = os.path.join(Archiver.get_user_outputs_dir(),fileName)
+                filePath = os.path.join(Archiver.get_user_indices_dir(),fileName)
                 self.fetchFileFromHostServer(filePath,tickerOption,"")
             except:
                 continue
@@ -257,7 +257,7 @@ class nseStockDataFetcher(fetcher):
         cm = None
         try:
             cm,cm_lastyear,raw = self.savedholidaysRaw()
-            nse  = NSE(Archiver.get_user_outputs_dir())
+            nse  = NSE(Archiver.get_user_cookies_dir())
             holidays = nse.holidays()
             cm_holidays = holidays["CM"]
         except Exception as e:

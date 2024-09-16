@@ -302,7 +302,7 @@ class morningstarDataFetcher(fetcher):
             "Upgrade-Insecure-Requests": "1",
             "User-Agent": random_user_agent()
         }
-        cookieHelper = CookieHelper(download_folder=Archiver.get_user_outputs_dir(),
+        cookieHelper = CookieHelper(download_folder=Archiver.get_user_cookies_dir(),
                                                  baseCookieUrl="https://www.barodaetrade.com/Markettracker/Dividend_Declared",
                                                  cookieStoreName="bcaps",
                                                  baseHtmlUrl="https://www.barodaetrade.com/Markettracker/Dividend_Declared",
