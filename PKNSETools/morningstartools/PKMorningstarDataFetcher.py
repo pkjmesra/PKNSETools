@@ -145,7 +145,7 @@ class morningstarDataFetcher(fetcher):
             'x-newrelic-id': 'VQMFV15RDRABV1ZVAAEBUlUG',
             'x-requested-with': 'XMLHttpRequest',
         }
-        headers['cookie'] = getRes.headers.get('Set-Cookie')
+        headers['cookie'] = getRes.headers.get('Set-Cookie') if getRes is not None else ""
 
         data = {
             'ctl00$ctl00$ContentPlaceHolder1$contentResearchTools$scriptMgr': 'ctl00$ctl00$ContentPlaceHolder1$contentResearchTools$ctl00$upnlSectorExposure|ctl00$ctl00$ContentPlaceHolder1$contentResearchTools$ctl00$btnGo',
@@ -171,10 +171,10 @@ class morningstarDataFetcher(fetcher):
             'ctl00$ctl00$ContentPlaceHolder1$contentResearchTools$ctl00$btnGo': 'Go',
         }
 
-        res = requests.post('https://www.morningstar.in/tools/most-popular-stocks-in-mutual-fund.aspx', headers=headers, data=data)
-        if res is None or res.status_code != 200:
-            return None
         try:
+            res = requests.post('https://www.morningstar.in/tools/most-popular-stocks-in-mutual-fund.aspx', headers=headers, data=data)
+            if res is None or res.status_code != 200:
+                return None
             json_text = res.content
             json_data = json_text #json.loads(json_text)
             result_soup = BeautifulSoup(json_data,'html.parser')
