@@ -270,7 +270,7 @@ class nseStockDataFetcher(fetcher):
         return cm_holidays, raw
 
     def capitalMarketStatus(self, exchange="^NSEI"):
-        # nse  = NSE(Archiver.get_user_outputs_dir())
+        # nse  = NSE(Archiver.get_user_cookies_dir())
         ticker = yf.Ticker(exchange) # ^IXIC
         try:
             info = ticker.info

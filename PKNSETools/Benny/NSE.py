@@ -185,6 +185,8 @@ class NSE:
             raise TimeoutError(repr(e))
 
         if r is not None and not r.ok:
+            if r.status_code == 401:
+                self.session.cookies.update(self.__setCookies())
             raise ConnectionError(f'{url} {r.status_code}: {r.reason}')
 
         return r
@@ -930,6 +932,3 @@ class NSE:
         data = self.__req(url, params={'type': type}).json()
 
         return data
-
-# from PKDevTools.classes import Archiver
-# nse = NSE(Archiver.get_user_outputs_dir())

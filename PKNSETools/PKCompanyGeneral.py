@@ -47,7 +47,7 @@ MIN_PENALTY_WAIT_SECONDS = 10
 th = Throttle(throttleConfig, MAX_PENALTY_COUNT)
 
 def initialize():
-    session = NSE(download_folder=Archiver.get_user_data_dir()).session
+    session = NSE(download_folder=Archiver.get_user_cookies_dir()).session
     
 def _get_Tuple_From_JSON(companyDict):
     return namedtuple('X', companyDict.keys())(*companyDict.values())
@@ -140,7 +140,7 @@ def download(symbolOrTask, trialCount=0):
     symbol = symbolOrTask
     if not isinstance(symbolOrTask, str):
         symbol = symbolOrTask.userData    
-    company_details = NSE(download_folder=Archiver.get_user_data_dir()).session.get(url=get_details.format(symbol), headers=_head)
+    company_details = NSE(download_folder=Archiver.get_user_cookies_dir()).session.get(url=get_details.format(symbol), headers=_head)
     if company_details.status_code == 401 and trialCount <=2:
         return download(symbolOrTask,trialCount=trialCount+1)
         
