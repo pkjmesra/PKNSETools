@@ -668,10 +668,21 @@ class NSE:
 
         `Sample response <https://github.com/BennyThadikaran/NseIndiaApi/blob/main/src/samples/blockDeals.json>`__
 
-        :return: Block deals. ``data`` key is a list of all block deal (Empty list if no block deals).
+        :return: Large deals data with keys as "as_on_date", "BULK_DEALS_DATA","BLOCK_DEALS","BULK_DEALS", "BLOCK_DEALS_DATA","SHORT_DEALS","SHORT_DEALS_DATA".
         :rtype: dict'''
 
         return self.__req(f'{self.base_url}/block-deal').json()
+
+    def largeDeals(self) -> Dict:
+        '''Large deals
+
+        `Sample response <https://www.nseindia.com/api/snapshot-capital-market-largedeal>`__
+
+        :return: Large deals. ``data`` key is a list of all block deal (Empty list if no block deals).
+        :rtype: dict'''
+
+        return self.__req(f'{self.base_url}/snapshot-capital-market-largedeal').json()
+
 
     def fnoLots(self) -> Dict[str, int]:
         '''Get the lot size of FnO stocks.
