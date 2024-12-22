@@ -1,3 +1,4 @@
+brotli
 bs4
 mthrottle
 numpy
