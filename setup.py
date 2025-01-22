@@ -33,6 +33,8 @@ python setup.py clean build install sdist bdist_wheel
 """
 # import atexit, os
 import sys
+import os
+import shutil
 from distutils.core import setup
 
 import setuptools  # noqa
@@ -42,19 +44,28 @@ from PKNSETools import __version__ as VERSION
 __USERNAME__ = 'pkjmesra'
 __PACKAGENAME__ = 'PKNSETools'
 
-with open('README.md', 'r') as fh:
-	long_description = fh.read()
-with open('requirements.txt', 'r') as fh:
-	install_requires = fh.read().splitlines()
+install_requires=[]
+if os.path.exists("README.md") and os.path.isfile("README.md"):
+    with open("README.md", "r") as fh:
+        long_description = fh.read()
+if os.path.exists("requirements.txt") and os.path.isfile("requirements.txt"):
+    with open("requirements.txt", "r") as fh:
+        install_requires = fh.read().splitlines()
+elif os.path.exists(os.path.join(__PACKAGENAME__,"requirements.txt")) and os.path.isfile(os.path.join(__PACKAGENAME__,"requirements.txt")):
+    with open(os.path.join(__PACKAGENAME__,"requirements.txt"), "r") as fh:
+        install_requires = fh.read().splitlines()
+
 
 SYS_MAJOR_VERSION = str(sys.version_info.major)
-SYS_VERSION = SYS_MAJOR_VERSION + '.' +str(sys.version_info.minor)
+SYS_VERSION = SYS_MAJOR_VERSION + "." + str(sys.version_info.minor)
 
-WHEEL_NAME = __PACKAGENAME__+'-'+VERSION+'-py'+SYS_MAJOR_VERSION+'-none-any.whl'
-TAR_FILE = __PACKAGENAME__+'-'+VERSION+'.tar.gz'
-EGG_FILE = __PACKAGENAME__+'-'+VERSION+'-py'+SYS_VERSION+'.egg'
+WHEEL_NAME = (
+    __PACKAGENAME__ + "-" + VERSION + "-py" + SYS_MAJOR_VERSION + "-none-any.whl"
+)
+TAR_FILE = __PACKAGENAME__ + "-" + VERSION + ".tar.gz"
+EGG_FILE = __PACKAGENAME__ + "-" + VERSION + "-py" + SYS_VERSION + ".egg"
 DIST_FILES = [WHEEL_NAME, TAR_FILE, EGG_FILE]
-DIST_DIR = 'dist/'
+DIST_DIR = "dist/"
 
 # def _post_build():
 # 	if "bdist_wheel" in sys.argv:
@@ -63,6 +74,26 @@ DIST_DIR = 'dist/'
 # 				os.rename(DIST_DIR + filename, DIST_DIR + filename.replace(__PACKAGENAME__+'-', __PACKAGENAME__+'_'+__USERNAME__+'-'))
 
 # atexit.register(_post_build)
+
+try:
+    from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+    class bdist_wheel(_bdist_wheel):
+        def finalize_options(self):
+            _bdist_wheel.finalize_options(self)
+            self.root_is_pure = False
+except ImportError:
+    bdist_wheel = None
+
+package_files_To_Install = ["LICENSE","README.md","requirements.txt"]
+package_files = [__PACKAGENAME__ + ".ini","courbd.ttf"]
+package_dir = os.path.join(os.getcwd(),__PACKAGENAME__)
+if os.path.exists(package_dir):
+    for file in package_files_To_Install:
+        targetFileName = file.split(os.sep)[-1].split(".")[0] + ".txt"
+        package_files.append(targetFileName)
+        srcFile = os.path.join(os.getcwd(),file)
+        if os.path.isfile(srcFile):
+            shutil.copy(srcFile,os.path.join(package_dir,targetFileName))
 
 setup(
 	name = __PACKAGENAME__,
@@ -94,9 +125,10 @@ setup(
 	'Programming Language :: Python',
 	'Programming Language :: Python :: 3',
 	'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
 	],
 	install_requires = install_requires,
 	keywords = ['NSE', 'Stocks','Data Download'],
 	test_suite="test",
 ),
-python_requires='>=3.11',
+python_requires='>=3.12',

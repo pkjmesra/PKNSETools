@@ -34,7 +34,7 @@ on:
         description: 'PyPi Publish'
         required: false
         default: 'PyPi Publish'
-
+        
       branch-name:
         description: 'branch-name'
         required: true
@@ -46,6 +46,12 @@ on:
         required: true
         type: string
         default: 'x.y.z'
+
+      targetPythonVersion:
+        description: 'Target Python version: 3.9 , 3.10, 3.11,3,12,3.13 ?'
+        required: false
+        type: string
+        default: '3.12'
 
   # schedule:
   #   - cron: '30 7 * * 6'
@@ -59,15 +65,43 @@ on:
         required: true
         type: string
         default: 'x.y.z'
+      targetPythonVersion:
+        description: 'Target Python version: 3.9 , 3.10, 3.11, 3.12, 3.13 ?'
+        required: false
+        type: string
+        default: '3.12'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+        
 jobs:
+  # Check whether to build the wheels and the source tarball
+  check_build_trigger:
+    name: Check build trigger
+    runs-on: ubuntu-latest
+    if: github.repository == 'pkjmesra/PKNSETools'
+    outputs:
+      build: ${{ steps.check_build_trigger.outputs.build }}
+
+    steps:
+      - name: Checkout PKNSETools
+        uses: actions/checkout@v3
+        with:
+          ref: main 
+            # ${{ github.event.pull_request.head.sha }}
+
+      - id: check_build_trigger
+        name: Check build trigger
+        run: bash .github/dependencies/build_tools/github/check_build_trigger.sh
+  
   check_should_run:
       runs-on: windows-latest
       name: Check latest commit
       outputs:
         should_run: ${{ steps.should_run.outputs.should_run }}
       steps:
-        - uses: actions/checkout@v2
+        - uses: actions/checkout@v4
           with:
             ref: main
         - name: print latest_commit
@@ -77,98 +111,220 @@ jobs:
           continue-on-error: true
           name: check latest commit is less than a week
           if: ${{ github.event_name == 'workflow_call' }} || ${{ github.event_name == 'workflow_dispatch' }}
-          run: test -z $(git rev-list  --after="7 days"  ${{ github.sha }}) && echo "::set-output name=should_run::false"
+          shell: bash
+          run: test -z $(git rev-list  --after="7 days"  ${{ github.sha }} --max-count=1) && echo "::set-output name=should_run::false"
 
-  deploy:
+  build_wheels:
+    name: Build wheel for cp${{ matrix.python }}-${{ matrix.platform_id }}-${{ matrix.manylinux_image }}
+    runs-on: ${{ matrix.os }}
 
-    runs-on: windows-latest
-    needs: check_should_run
-    permissions: write-all
+    strategy:
+      # Ensure that a wheel builder finishes even if another fails
+      fail-fast: false
+      matrix:
+        include:
+          # Window 64 bit
+          # Note: windows-2019 is needed for older Python versions:
+          # https://github.com/PKNSETools/PKNSETools/issues/22530
+          - os: windows-latest
+            python: 312
+            platform_id: win_amd64
+
+          # NumPy on Python 3.10 only supports 64bit and is only available with manylinux2014
+          - os: ubuntu-latest
+            python: 312
+            platform_id: manylinux_x86_64
+            manylinux_image: manylinux2014
+
+          - os: macos-13
+            python: 312
+            platform_id: macosx_x86_64
+
+          - os: macos-14
+            python: 312
+            platform_id: macosx_arm64
+
     steps:
-    - uses: actions/checkout@v2
-      with:
-        ref: ${{ inputs.branch-name }}
+      - name: Checkout PKNSETools
+        uses: actions/checkout@v3
 
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.11
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12" # update once build dependencies are available
+  
+      - name: Install conda for macos arm64
+        if: ${{ matrix.platform_id == 'macosx_arm64' }}
+        run: |
+          set -ex
+          # macos arm64 runners do not have conda installed. Thus we must install conda manually
+          EXPECTED_SHA="dd832d8a65a861b5592b2cf1d55f26031f7c1491b30321754443931e7b1e6832"
+          MINIFORGE_URL="https://github.com/conda-forge/miniforge/releases/download/23.11.0-0/Mambaforge-23.11.0-0-MacOSX-arm64.sh"
+          curl -L --retry 10 $MINIFORGE_URL -o miniforge.sh
 
-    - name: Restore Dependencies from Cache
-      uses: actions/cache@v2
-      with:
-        path: ~\AppData\Local\pip\Cache
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+          # Check SHA
+          file_sha=$(shasum -a 256 miniforge.sh | awk '{print $1}')
+          if [ "$EXPECTED_SHA" != "$file_sha" ]; then
+              echo "SHA values did not match!"
+              exit 1
+          fi
 
-    - name: Install Python Dependencies
-      run: |
-        pip3 install -r requirements.txt
+          # Install miniforge
+          MINIFORGE_PATH=$HOME/miniforge
+          bash ./miniforge.sh -b -p $MINIFORGE_PATH
+          echo "$MINIFORGE_PATH/bin" >> $GITHUB_PATH
+          echo "CONDA_HOME=$MINIFORGE_PATH" >> $GITHUB_ENV
 
-    - name: Install setuptools
-      run: |
-        pip3 install setuptools wheel twine
-        pip3 install .
-    
-    - name: Declare env variables
-      id: vars
-      shell: bash
-      run: |
-        GITHUB_REF=${GITHUB_REF#refs/tags/}
-        echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-        echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-        CURRENT_VERSION=`grep -o "'.*'" PKNSETools/__init__.py | sed "s/'//g"`
-        VERSION_ARR=(${CURRENT_VERSION//./ })
-        MAJOR_MINOR=${VERSION_ARR[0]}.${VERSION_ARR[1]}
-        TODAY=`date +%Y%m%d`
-        THIS_VERSION=${MAJOR_MINOR}.${TODAY}.${{github.run_number}}
-        echo ${THIS_VERSION}
-        if [ "${{ inputs.version }}" == "x.y.z" ]; then
-          echo "default version x.y.z cannot be used"
-        else
-          THIS_VERSION="${{ inputs.version }}"
-        fi
-        rm -rf PKNSETools/__init__.py
-        echo __version__=\'`echo ${THIS_VERSION}`\' >> PKNSETools/__init__.py
-        echo "##[set-output name=THIS_VERSION;]$(echo ${THIS_VERSION})"
-        echo "##[set-output name=CURRENT_VERSION;]$(echo ${CURRENT_VERSION})"
-       
-    - name: Build and publish distribution 📦 to Test PyPI
-      if: ${{ needs.check_should_run.outputs.should_run != 'false' }}
-      env:
-        TWINE_USERNAME: ${{ secrets.TESTPYPI_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.TESTPYPI_PASSWORD }}
-        repository_url: https://test.pypi.org/legacy/
-      shell: cmd
-      run: |
-        rmdir /s /q build
-        rmdir /s /q dist
-        # del /s /q PKNSETools/__init__.py
-        # echo __version__='${{ steps.vars.outputs.THIS_VERSION }}' >> PKNSETools/__init__.py
-        python3 setup.py clean build sdist bdist_wheel
-        twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/*
-        
-    - name: Publish distribution 📦 to PyPI
-    
-      if: ${{ needs.check_should_run.outputs.should_run != 'false' }}
-      env:
-        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        repository_url: https://upload.pypi.org/legacy/
-      shell: cmd
-      run: |
-        rmdir /s /q build
-        rmdir /s /q dist
-        # del /s /q PKNSETools/__init__.py
-        # echo __version__='${{ steps.vars.outputs.THIS_VERSION }}' >> PKNSETools/__init__.py
-        python3 setup.py clean build sdist bdist_wheel
-        twine upload --verbose dist/*
-    
-    - name: Delete history of workflow runs
-      shell: bash
-      run: |
-        gh run list --status completed --limit 100 --json databaseId -q '.[].databaseId' | xargs -IID gh api "repos/$(gh repo view --json nameWithOwner -q .nameWithOwner)/actions/runs/ID" -X DELETE
-        # gh run list --status cancelled --limit 100 --json databaseId -q '.[].databaseId' | xargs -IID gh api "repos/$(gh repo view --json nameWithOwner -q .nameWithOwner)/actions/runs/ID" -X DELETE
-      env:
-        GH_TOKEN : ${{secrets.GITHUB_TOKEN}}
+      - name: Install conda for macos x86_64
+        if: ${{ matrix.platform_id == 'macosx_x86_64' }}
+        run: |
+          set -ex
+          # macos x64: install conda manually
+          EXPECTED_SHA="c6ac073b80cedb313561bc11c2e61b0bd102b74df0363ed6c1e90303b322092a"
+          MINIFORGE_URL="https://github.com/conda-forge/miniforge/releases/download/23.11.0-0/Mambaforge-23.11.0-0-MacOSX-x86_64.sh"
+          curl -L --retry 10 $MINIFORGE_URL -o miniforge.sh
+
+          # Check SHA
+          file_sha=$(shasum -a 256 miniforge.sh | awk '{print $1}')
+          if [ "$EXPECTED_SHA" != "$file_sha" ]; then
+              echo "SHA values did not match!"
+              exit 1
+          fi
+
+          # Install miniforge
+          MINIFORGE_PATH=$HOME/miniforge
+          bash ./miniforge.sh -b -p $MINIFORGE_PATH
+          echo "$MINIFORGE_PATH/bin" >> $GITHUB_PATH
+          echo "CONDA_HOME=$MINIFORGE_PATH" >> $GITHUB_ENV
+          
+      - name: Set conda environment for non-macos arm64 environments
+        if: ${{ matrix.platform_id != 'macosx_arm64' && matrix.platform_id != 'macosx_x86_64'}}
+        run: |
+          # Non-macos arm64 environments already have conda installed
+          echo "CONDA_HOME=/usr/local/miniconda" >> $GITHUB_ENV
+
+      - name: Install Python Dependencies
+        run: |
+          pip3 install -r requirements.txt
+          
+      - name: Declare env variables
+        id: vars
+        shell: bash
+        run: |
+          GITHUB_REF=${GITHUB_REF#refs/tags/}
+          echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+          CURRENT_VERSION=`grep -o "'.*'" PKNSETools/__init__.py | sed "s/'//g"`
+          VERSION_ARR=(${CURRENT_VERSION//./ })
+          MAJOR_MINOR=${VERSION_ARR[0]}.${VERSION_ARR[1]}
+          TODAY=`date +%Y%m%d`
+          THIS_VERSION=${MAJOR_MINOR}.${TODAY}.${{github.run_number}}
+          echo ${THIS_VERSION}
+          if [ "${{ inputs.version }}" == "x.y.z" ]; then
+            echo "default version x.y.z cannot be used"
+          else
+            THIS_VERSION="${{ inputs.version }}"
+          fi
+          rm -rf PKNSETools/__init__.py
+          echo __version__=\'`echo ${THIS_VERSION}`\' >> PKNSETools/__init__.py
+          echo "##[set-output name=THIS_VERSION;]$(echo ${THIS_VERSION})"
+          echo "##[set-output name=CURRENT_VERSION;]$(echo ${CURRENT_VERSION})"
+
+      - name: Install setuptools
+        shell: bash
+        run: |
+          pip3 install setuptools wheel twine
+
+      - name: Build and test wheels
+        env:
+          CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform_id }}
+          CIBW_ARCHS: all
+          CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.manylinux_image }}
+          CIBW_MANYLINUX_I686_IMAGE: ${{ matrix.manylinux_image }}
+          # Needed on Windows CI to compile with Visual Studio compiler
+          # otherwise Meson detects a MINGW64 platform and use MINGW64
+          # toolchain
+          CIBW_CONFIG_SETTINGS_WINDOWS: "setup-args=--vsenv"
+          CIBW_BUILD_VERBOSITY: 1
+        run: bash .github/dependencies/build_tools/wheels/build_wheels.sh
+
+      - name: Create manylinux wheel from linux
+        shell: bash
+        if: ${{ matrix.platform_id == 'manylinux_x86_64' }}
+        run: |
+          mv dist/PKNSETools-${{ steps.vars.outputs.THIS_VERSION }}-cp${{ matrix.python }}-cp${{ matrix.python }}-linux_x86_64.whl dist/PKNSETools-${{ steps.vars.outputs.THIS_VERSION }}-cp${{ matrix.python }}-cp${{ matrix.python }}-manylinux2014_x86_64.whl
+
+      - name: Create macOS x64 wheels from compatible versions
+        shell: bash
+        if: ${{ matrix.platform_id == 'macosx_x86_64' }}
+        run: |
+          cp dist/PKNSETools-${{ steps.vars.outputs.THIS_VERSION }}-cp310-cp310-macosx_10_9_x86_64.whl dist/PKNSETools-${{ steps.vars.outputs.THIS_VERSION }}-cp${{ matrix.python }}-cp${{ matrix.python }}-macosx_10_9_x86_64.whl
+
+      - name: Create macOS arm64 wheels from compatible versions
+        shell: bash
+        if: ${{ matrix.platform_id == 'macosx_arm64' }}
+        run: |
+          cp dist/PKNSETools-${{ steps.vars.outputs.THIS_VERSION }}-cp310-cp310-macosx_13_0_arm64.whl dist/PKNSETools-${{ steps.vars.outputs.THIS_VERSION }}-cp${{ matrix.python }}-cp${{ matrix.python }}-macosx_13_0_arm64.whl 
+
+      - name: Build and publish distribution 📦 to Test PyPI
+        env:
+          TWINE_USERNAME: ${{ secrets.TESTPYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.TESTPYPI_PASSWORD }}
+          repository_url: https://test.pypi.org/legacy/
+        shell: bash
+        run: |
+          twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/*.whl
+
+      - name: Publish distribution 📦 to PyPI
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+          repository_url: https://upload.pypi.org/legacy/
+        shell: bash
+        run: |
+          twine upload --verbose dist/*.whl
+
+      - name: Build and publish source code 📦 to Test PyPI
+        env:
+          TWINE_USERNAME: ${{ secrets.TESTPYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.TESTPYPI_PASSWORD }}
+          repository_url: https://test.pypi.org/legacy/
+        shell: bash
+        if: ${{ matrix.platform_id == 'manylinux_x86_64' && matrix.python == '312' }}
+        run: |
+          twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/*.tar.gz
+  
+      - name: Publish source code 📦 to PyPI
+        if: ${{ matrix.platform_id == 'manylinux_x86_64' && matrix.python == '312' }}
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+          repository_url: https://upload.pypi.org/legacy/
+        shell: bash
+        run: |
+          twine upload --verbose dist/*.tar.gz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-cp${{ matrix.python }}-${{ matrix.platform_id }}-${{ matrix.manylinux_image }}
+          path: dist/*.whl
+          if-no-files-found: ignore
+
+      # - name: Upload Binaries to Release
+      #   uses: svenstaro/upload-release-action@v2
+      #   with:
+      #     repo_token: ${{ secrets.GITHUB_TOKEN }}
+      #     file: dist/*.whl
+      #     tag: ${{ steps.vars.outputs.THIS_VERSION }}
+      #     release_name: PKNSETools - v${{ steps.vars.outputs.THIS_VERSION }}
+      #     overwrite: true
+      #     prerelease: false
+      #     make_latest: true
+      #     file_glob: true
+      - name: Delete history of workflow runs
+        shell: bash
+        run: |
+          gh run list --status completed --limit 100 --json databaseId -q '.[].databaseId' | xargs -IID gh api "repos/$(gh repo view --json nameWithOwner -q .nameWithOwner)/actions/runs/ID" -X DELETE
+          # gh run list --status cancelled --limit 100 --json databaseId -q '.[].databaseId' | xargs -IID gh api "repos/$(gh repo view --json nameWithOwner -q .nameWithOwner)/actions/runs/ID" -X DELETE
+        env:
+          GH_TOKEN : ${{secrets.GITHUB_TOKEN}}

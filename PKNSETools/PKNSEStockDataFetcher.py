@@ -274,7 +274,8 @@ class nseStockDataFetcher(fetcher):
         ticker = yf.Ticker(exchange) # ^IXIC
         try:
             info = ticker.info
-        except:
+        except Exception as e:
+            default_logger().debug(e, exc_info=True)
             info = {"longName":exchange}
             pass
         try:
@@ -333,8 +334,8 @@ class nseStockDataFetcher(fetcher):
             pass
         return status, marketStatusLong,tradeDate
 
-# f = nseStockDataFetcher()
-# f.capitalMarketStatus(exchange="^NSEI")
+f = nseStockDataFetcher()
+f.capitalMarketStatus(exchange="^NSEI")
 
 
 # from yfinhanced import YFClient
