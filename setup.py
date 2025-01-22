@@ -98,8 +98,9 @@ if os.path.exists(package_dir):
 setup(
 	name = __PACKAGENAME__,
 	packages=setuptools.find_packages(where=".", exclude=["docs", "test"]),
+    cmdclass={'bdist_wheel': bdist_wheel},
 	include_package_data = True,    # include everything in source control
-	# package_data={__PACKAGENAME__+'': [__PACKAGENAME__+'.ini']},
+	package_data={__PACKAGENAME__: ["release.md"],"":package_files},
 	# ...but exclude README.txt from all packages
 	exclude_package_data = { '': ['*.yml'] },
 	version = VERSION,
