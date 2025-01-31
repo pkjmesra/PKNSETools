@@ -276,7 +276,11 @@ class nseStockDataFetcher(fetcher):
             info = ticker.info
         except Exception as e:
             default_logger().debug(e, exc_info=True)
-            info = {"longName":exchange}
+            try:
+                info = ticker.get_history_metadata()
+            except:
+                info = {"longName":exchange}
+                pass
             pass
         try:
             history = ticker._lazy_load_price_history()
@@ -284,6 +288,9 @@ class nseStockDataFetcher(fetcher):
                 history.history(period="1d",interval="1d",prepost=True, proxy=None)
             if history._history_metadata is not None:
                 history._history_metadata["period"] = '5d' # Ignore the yfinance exception for period being 1wk.
+        except:
+            pass
+        try:
             md = ticker.get_history_metadata()
             ltd = md["regularMarketTime"]
             ctp = md["currentTradingPeriod"]
@@ -334,8 +341,8 @@ class nseStockDataFetcher(fetcher):
             pass
         return status, marketStatusLong,tradeDate
 
-f = nseStockDataFetcher()
-f.capitalMarketStatus(exchange="^NSEI")
+# f = nseStockDataFetcher()
+# f.capitalMarketStatus(exchange="^NSEI")
 
 
 # from yfinhanced import YFClient
