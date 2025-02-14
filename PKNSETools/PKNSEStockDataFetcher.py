@@ -271,7 +271,7 @@ class nseStockDataFetcher(fetcher):
         return cm_holidays, raw
 
     def capitalMarketStatus(self, exchange="^NSEI"):
-        if not 'pytest' in sys.modules:
+        if 'unittest' in sys.modules or any("pytest" in arg for arg in sys.argv):
             return 'Open','S&P BSE SENSEX | Closed | 2025-02-13 | 76138.97 | \x1b[31m▼-32.11\x1b[0m (\x1b[31m-0.04\x1b[0m%)',PKDateUtilities.currentDateTime().strftime("%Y-%m-%d")
         # nse  = NSE(Archiver.get_user_cookies_dir())
         ticker = yf.Ticker(exchange) # ^IXIC
