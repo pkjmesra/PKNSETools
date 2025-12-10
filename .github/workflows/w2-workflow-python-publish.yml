@@ -137,7 +137,7 @@ jobs:
             platform_id: manylinux_x86_64
             manylinux_image: manylinux2014
 
-          - os: macos-13
+          - os: macos-15
             python: 312
             platform_id: macosx_x86_64
 
