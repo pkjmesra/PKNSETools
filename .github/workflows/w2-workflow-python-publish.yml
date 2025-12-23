@@ -249,6 +249,35 @@ jobs:
           CIBW_BUILD_VERBOSITY: 1
         run: bash .github/dependencies/build_tools/wheels/build_wheels.sh
 
+      - name: Normalize wheel filenames for PyPI
+        shell: bash
+        run: |
+          echo "Renaming wheel files to use normalized package name (lowercase)..."
+          echo "Before:"
+          ls -la dist/*.whl 2>/dev/null || echo "No wheel files yet"
+          
+          # PyPI requires normalized (lowercase) package names in wheel filenames
+          # Rename PKNSETools to pknsetools in all wheel filenames
+          for wheel in dist/PKNSETools-*.whl; do
+            if [ -f "$wheel" ]; then
+              normalized=$(echo "$wheel" | sed 's/PKNSETools-/pknsetools-/')
+              echo "Renaming: $wheel -> $normalized"
+              mv "$wheel" "$normalized"
+            fi
+          done
+          
+          # Also rename any tar.gz files
+          for tarball in dist/PKNSETools-*.tar.gz; do
+            if [ -f "$tarball" ]; then
+              normalized=$(echo "$tarball" | sed 's/PKNSETools-/pknsetools-/')
+              echo "Renaming: $tarball -> $normalized"
+              mv "$tarball" "$normalized"
+            fi
+          done
+          
+          echo "After:"
+          ls -la dist/ 2>/dev/null || echo "No files in dist"
+
       - name: Create manylinux wheel from linux
         shell: bash
         if: ${{ matrix.platform_id == 'manylinux_x86_64' }}
@@ -257,6 +286,7 @@ jobs:
           ls -la dist/
           
           # Find and rename linux wheel to manylinux if it exists
+          # Note: wheel filename already normalized to lowercase 'pknsetools'
           LINUX_WHEEL=$(find dist -name "*linux_x86_64.whl" -type f 2>/dev/null | head -1)
           if [ -n "$LINUX_WHEEL" ]; then
             MANYLINUX_WHEEL=$(echo "$LINUX_WHEEL" | sed 's/linux_x86_64/manylinux2014_x86_64/')
@@ -266,6 +296,9 @@ jobs:
             echo "No linux_x86_64 wheel found, checking if manylinux wheel already exists:"
             ls -la dist/*.whl || echo "No wheel files found"
           fi
+          
+          echo "Final wheel files:"
+          ls -la dist/*.whl
 
       # - name: Create macOS x64 wheels from compatible versions
       #   shell: bash
