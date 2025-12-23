@@ -42,7 +42,10 @@ import setuptools  # noqa
 from PKNSETools import __version__ as VERSION
 
 __USERNAME__ = 'pkjmesra'
-__PACKAGENAME__ = 'PKNSETools'
+# Package name must be lowercase (normalized) for PyPI compliance
+# The actual package directory is still PKNSETools for backward compatibility
+__PACKAGENAME__ = 'pknsetools'
+__PACKAGE_DIR__ = 'PKNSETools'  # Actual directory name
 
 install_requires=[]
 if os.path.exists("README.md") and os.path.isfile("README.md"):
@@ -51,8 +54,8 @@ if os.path.exists("README.md") and os.path.isfile("README.md"):
 if os.path.exists("requirements.txt") and os.path.isfile("requirements.txt"):
     with open("requirements.txt", "r") as fh:
         install_requires = fh.read().splitlines()
-elif os.path.exists(os.path.join(__PACKAGENAME__,"requirements.txt")) and os.path.isfile(os.path.join(__PACKAGENAME__,"requirements.txt")):
-    with open(os.path.join(__PACKAGENAME__,"requirements.txt"), "r") as fh:
+elif os.path.exists(os.path.join(__PACKAGE_DIR__,"requirements.txt")) and os.path.isfile(os.path.join(__PACKAGE_DIR__,"requirements.txt")):
+    with open(os.path.join(__PACKAGE_DIR__,"requirements.txt"), "r") as fh:
         install_requires = fh.read().splitlines()
 
 
@@ -85,22 +88,22 @@ except ImportError:
     bdist_wheel = None
 
 package_files_To_Install = ["LICENSE","README.md","requirements.txt"]
-package_files = [__PACKAGENAME__ + ".ini","courbd.ttf"]
-package_dir = os.path.join(os.getcwd(),__PACKAGENAME__)
-if os.path.exists(package_dir):
+package_files = [__PACKAGE_DIR__ + ".ini","courbd.ttf"]
+package_dir_path = os.path.join(os.getcwd(), __PACKAGE_DIR__)
+if os.path.exists(package_dir_path):
     for file in package_files_To_Install:
         targetFileName = file.split(os.sep)[-1].split(".")[0] + ".txt"
         package_files.append(targetFileName)
         srcFile = os.path.join(os.getcwd(),file)
         if os.path.isfile(srcFile):
-            shutil.copy(srcFile,os.path.join(package_dir,targetFileName))
+            shutil.copy(srcFile,os.path.join(package_dir_path,targetFileName))
 
 setup(
 	name = __PACKAGENAME__,
 	packages=setuptools.find_packages(where=".", exclude=["docs", "test"]),
     cmdclass={'bdist_wheel': bdist_wheel},
 	include_package_data = True,    # include everything in source control
-	package_data={__PACKAGENAME__: ["release.md"],"":package_files},
+	package_data={__PACKAGE_DIR__: ["release.md"],"":package_files},
 	# ...but exclude README.txt from all packages
 	exclude_package_data = { '': ['*.yml'] },
 	version = VERSION,
@@ -110,7 +113,7 @@ setup(
 	author = __USERNAME__,
 	author_email = __USERNAME__+'@gmail.com',
 	license = 'OSI Approved (MIT)',
-	url = 'https://github.com/'+__USERNAME__+'/'+__PACKAGENAME__, # use the URL to the github repo
+	url = 'https://github.com/'+__USERNAME__+'/PKNSETools', # use the URL to the github repo
 	zip_safe=False,
 	# entry_points='''
 	# [console_scripts]

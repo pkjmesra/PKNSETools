@@ -249,34 +249,12 @@ jobs:
           CIBW_BUILD_VERBOSITY: 1
         run: bash .github/dependencies/build_tools/wheels/build_wheels.sh
 
-      - name: Normalize wheel filenames for PyPI
+      - name: List built wheels
         shell: bash
         run: |
-          echo "Renaming wheel files to use normalized package name (lowercase)..."
-          echo "Before:"
+          echo "Built wheel files:"
           ls -la dist/*.whl 2>/dev/null || echo "No wheel files yet"
-          
-          # PyPI requires normalized (lowercase) package names in wheel filenames
-          # Rename PKNSETools to pknsetools in all wheel filenames
-          for wheel in dist/PKNSETools-*.whl; do
-            if [ -f "$wheel" ]; then
-              normalized=$(echo "$wheel" | sed 's/PKNSETools-/pknsetools-/')
-              echo "Renaming: $wheel -> $normalized"
-              mv "$wheel" "$normalized"
-            fi
-          done
-          
-          # Also rename any tar.gz files
-          for tarball in dist/PKNSETools-*.tar.gz; do
-            if [ -f "$tarball" ]; then
-              normalized=$(echo "$tarball" | sed 's/PKNSETools-/pknsetools-/')
-              echo "Renaming: $tarball -> $normalized"
-              mv "$tarball" "$normalized"
-            fi
-          done
-          
-          echo "After:"
-          ls -la dist/ 2>/dev/null || echo "No files in dist"
+          ls -la dist/*.tar.gz 2>/dev/null || echo "No tar.gz files yet"
 
       - name: Create manylinux wheel from linux
         shell: bash
