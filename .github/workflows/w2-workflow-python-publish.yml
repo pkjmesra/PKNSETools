@@ -213,8 +213,8 @@ jobs:
         shell: bash
         run: |
           GITHUB_REF=${GITHUB_REF#refs/tags/}
-          echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+          echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
           CURRENT_VERSION=`grep -o "'.*'" PKNSETools/__init__.py | sed "s/'//g"`
           VERSION_ARR=(${CURRENT_VERSION//./ })
           MAJOR_MINOR=${VERSION_ARR[0]}.${VERSION_ARR[1]}
@@ -228,8 +228,8 @@ jobs:
           fi
           rm -rf PKNSETools/__init__.py
           echo __version__=\'`echo ${THIS_VERSION}`\' >> PKNSETools/__init__.py
-          echo "##[set-output name=THIS_VERSION;]$(echo ${THIS_VERSION})"
-          echo "##[set-output name=CURRENT_VERSION;]$(echo ${CURRENT_VERSION})"
+          echo "THIS_VERSION=${THIS_VERSION}" >> $GITHUB_OUTPUT
+          echo "CURRENT_VERSION=${CURRENT_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Install setuptools
         shell: bash
