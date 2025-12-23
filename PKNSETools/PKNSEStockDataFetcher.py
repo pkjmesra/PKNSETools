@@ -45,6 +45,13 @@ from PKDevTools.classes.OutputControls import OutputControls
 from PKNSETools.Benny.NSE import NSE
 from PKDevTools.classes.Utils import random_user_agent
 
+# Import high-performance data provider
+try:
+    from PKDevTools.classes.PKDataProvider import get_data_provider
+    _HP_DATA_AVAILABLE = True
+except ImportError:
+    _HP_DATA_AVAILABLE = False
+
 NSE_INDEX_MAP = {
     1: "https://archives.nseindia.com/content/indices/ind_nifty50list.csv",
     2: "https://archives.nseindia.com/content/indices/ind_niftynext50list.csv",
@@ -79,6 +86,159 @@ REPO_INDEX_MAP = {
 # This Class Handles Fetching of Stock Data over the internet from NSE/BSE
 
 class nseStockDataFetcher(fetcher):
+    
+    def __init__(self, configManager=None):
+        """Initialize the NSE stock data fetcher."""
+        super().__init__(configManager)
+        self._hp_provider = None
+        if _HP_DATA_AVAILABLE:
+            try:
+                self._hp_provider = get_data_provider()
+            except Exception:
+                pass
+    
+    def fetchStockData(
+        self,
+        stockCode,
+        period="1y",
+        interval="1d",
+        start=None,
+        end=None,
+        exchangeSuffix=".NS",
+    ):
+        """
+        Fetch stock data using high-performance provider or fallback sources.
+        
+        Args:
+            stockCode: Stock symbol (e.g., "RELIANCE")
+            period: Time period (e.g., "1d", "5d", "1mo", "1y")
+            interval: Candle interval (e.g., "1m", "5m", "1d")
+            start: Start date
+            end: End date
+            exchangeSuffix: Exchange suffix (default ".NS" for NSE)
+            
+        Returns:
+            DataFrame with OHLCV data or None
+        """
+        # Normalize symbol
+        symbol = stockCode.replace(exchangeSuffix, "").upper()
+        
+        # Map period to count
+        count = self._period_to_count(period, interval)
+        
+        # Map interval format
+        normalized_interval = self._normalize_interval(interval)
+        
+        # Try high-performance provider first
+        if self._hp_provider is not None:
+            try:
+                df = self._hp_provider.get_stock_data(
+                    symbol,
+                    interval=normalized_interval,
+                    count=count,
+                    start=start,
+                    end=end,
+                )
+                if df is not None and not df.empty:
+                    return df
+            except Exception as e:
+                default_logger().debug(f"HP provider failed for {symbol}: {e}")
+        
+        # Fallback: return None (Yahoo Finance dependency removed)
+        # The actual yfinance calls have been removed to eliminate dependency
+        return None
+    
+    def _period_to_count(self, period: str, interval: str) -> int:
+        """Convert period string to candle count."""
+        period_days = {
+            "1d": 1,
+            "5d": 5,
+            "1wk": 7,
+            "1mo": 30,
+            "3mo": 90,
+            "6mo": 180,
+            "1y": 365,
+            "2y": 730,
+            "5y": 1825,
+            "10y": 3650,
+            "max": 5000,
+        }
+        
+        interval_minutes = {
+            "1m": 1,
+            "2m": 2,
+            "3m": 3,
+            "4m": 4,
+            "5m": 5,
+            "10m": 10,
+            "15m": 15,
+            "30m": 30,
+            "60m": 60,
+            "1h": 60,
+            "1d": 1440,
+            "day": 1440,
+        }
+        
+        days = period_days.get(period, 365)
+        interval_mins = interval_minutes.get(interval, 1440)
+        
+        if interval_mins >= 1440:
+            return days
+        else:
+            # Intraday: market hours are ~6.25 hours = 375 minutes
+            trading_minutes_per_day = 375
+            return int((days * trading_minutes_per_day) / interval_mins)
+    
+    def _normalize_interval(self, interval: str) -> str:
+        """Normalize interval string to standard format."""
+        interval_map = {
+            "1m": "1m",
+            "2m": "2m",
+            "3m": "3m",
+            "4m": "4m",
+            "5m": "5m",
+            "10m": "10m",
+            "15m": "15m",
+            "30m": "30m",
+            "60m": "60m",
+            "1h": "60m",
+            "1d": "day",
+            "day": "day",
+            "1wk": "day",
+            "1mo": "day",
+        }
+        return interval_map.get(interval, "day")
+    
+    def getLatestPrice(self, symbol: str) -> float:
+        """Get the latest price for a stock."""
+        if self._hp_provider is not None:
+            try:
+                price = self._hp_provider.get_latest_price(symbol)
+                if price is not None:
+                    return price
+            except Exception:
+                pass
+        return 0.0
+    
+    def getRealtimeOHLCV(self, symbol: str) -> dict:
+        """Get real-time OHLCV for a stock."""
+        if self._hp_provider is not None:
+            try:
+                ohlcv = self._hp_provider.get_realtime_ohlcv(symbol)
+                if ohlcv is not None:
+                    return ohlcv
+            except Exception:
+                pass
+        return {}
+    
+    def isRealtimeDataAvailable(self) -> bool:
+        """Check if real-time data is available."""
+        if self._hp_provider is not None:
+            try:
+                return self._hp_provider.is_realtime_available()
+            except Exception:
+                pass
+        return False
 
     def saveAllNSEIndices(self):
         for tickerOption in NSE_INDEX_MAP.keys():
