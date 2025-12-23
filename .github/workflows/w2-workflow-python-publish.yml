@@ -110,9 +110,9 @@ jobs:
         - id: should_run
           continue-on-error: true
           name: check latest commit is less than a week
-          if: ${{ github.event_name == 'workflow_call' }} || ${{ github.event_name == 'workflow_dispatch' }}
+          if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
           shell: bash
-          run: test -z $(git rev-list  --after="7 days"  ${{ github.sha }} --max-count=1) && echo "::set-output name=should_run::false"
+          run: test -z $(git rev-list  --after="7 days"  ${{ github.sha }} --max-count=1) && echo "should_run=false" >> $GITHUB_OUTPUT
 
   build_wheels:
     name: Build wheel for cp${{ matrix.python }}-${{ matrix.platform_id }}-${{ matrix.manylinux_image }}
@@ -253,7 +253,19 @@ jobs:
         shell: bash
         if: ${{ matrix.platform_id == 'manylinux_x86_64' }}
         run: |
-          mv dist/PKNSETools-${{ steps.vars.outputs.THIS_VERSION }}-cp${{ matrix.python }}-cp${{ matrix.python }}-linux_x86_64.whl dist/PKNSETools-${{ steps.vars.outputs.THIS_VERSION }}-cp${{ matrix.python }}-cp${{ matrix.python }}-manylinux2014_x86_64.whl
+          echo "Listing dist directory contents:"
+          ls -la dist/
+          
+          # Find and rename linux wheel to manylinux if it exists
+          LINUX_WHEEL=$(find dist -name "*linux_x86_64.whl" -type f 2>/dev/null | head -1)
+          if [ -n "$LINUX_WHEEL" ]; then
+            MANYLINUX_WHEEL=$(echo "$LINUX_WHEEL" | sed 's/linux_x86_64/manylinux2014_x86_64/')
+            echo "Renaming $LINUX_WHEEL to $MANYLINUX_WHEEL"
+            mv "$LINUX_WHEEL" "$MANYLINUX_WHEEL"
+          else
+            echo "No linux_x86_64 wheel found, checking if manylinux wheel already exists:"
+            ls -la dist/*.whl || echo "No wheel files found"
+          fi
 
       # - name: Create macOS x64 wheels from compatible versions
       #   shell: bash
