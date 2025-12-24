@@ -49,13 +49,13 @@ __PACKAGE_DIR__ = 'PKNSETools'  # Actual directory name
 
 install_requires=[]
 if os.path.exists("README.md") and os.path.isfile("README.md"):
-    with open("README.md", "r") as fh:
+    with open("README.md", "r", encoding="utf-8") as fh:
         long_description = fh.read()
 if os.path.exists("requirements.txt") and os.path.isfile("requirements.txt"):
-    with open("requirements.txt", "r") as fh:
+    with open("requirements.txt", "r", encoding="utf-8") as fh:
         install_requires = fh.read().splitlines()
 elif os.path.exists(os.path.join(__PACKAGE_DIR__,"requirements.txt")) and os.path.isfile(os.path.join(__PACKAGE_DIR__,"requirements.txt")):
-    with open(os.path.join(__PACKAGE_DIR__,"requirements.txt"), "r") as fh:
+    with open(os.path.join(__PACKAGE_DIR__,"requirements.txt"), "r", encoding="utf-8") as fh:
         install_requires = fh.read().splitlines()
 
 
