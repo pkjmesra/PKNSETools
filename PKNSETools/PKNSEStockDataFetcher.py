@@ -416,6 +416,7 @@ class nseStockDataFetcher(fetcher):
     def updatedHolidays(self):
         cm_holidays = None
         cm = None
+        raw = None
         try:
             cm,cm_lastyear,raw = self.savedholidaysRaw()
             nse  = NSE(Archiver.get_user_cookies_dir())
@@ -426,8 +427,9 @@ class nseStockDataFetcher(fetcher):
             if cm_holidays is None or len(cm_holidays) < 1:
                 cm_holidays = cm
             pass
-        cm_holidays.extend(cm_lastyear)
-        raw["CM"] = cm_holidays
+        if cm_holidays is not None and cm_lastyear is not None:
+            cm_holidays.extend(cm_lastyear)
+            raw["CM"] = cm_holidays
         return cm_holidays, raw
 
     def capitalMarketStatus(self, exchange="^NSEI"):
