@@ -20,6 +20,418 @@ from PKDevTools.classes.Utils import random_user_agent
 from PKDevTools.classes.PKDateUtilities import PKDateUtilities
 # This Class Handles Fetching of Stock Data over the internet from NSE/BSE
 
+import time
+import re
+from datetime import datetime
+
+
+class CorporateActionsFetcher:
+    """Fetches corporate actions from BOBCAPS website with ASP.NET pagination."""
+    
+    def __init__(self, parent):
+        """Initialize with parent object that has fetchURL and session."""
+        self.parent = parent
+        self.logger = default_logger()
+        self.viewstate = None
+        self.eventvalidation = None
+        self.viewstategenerator = None
+    
+    def extract_aspnet_fields(self, html_content: str) -> dict:
+        """
+        Extract ASP.NET WebForms hidden fields from HTML content.
+        
+        Returns:
+            Dictionary with '__VIEWSTATE', '__EVENTVALIDATION', etc.
+        """
+        soup = BeautifulSoup(html_content, 'html.parser')
+        fields = {}
+        
+        # Common ASP.NET hidden fields
+        field_names = [
+            '__VIEWSTATE',
+            '__EVENTVALIDATION', 
+            '__VIEWSTATEGENERATOR',
+            '__EVENTTARGET',
+            '__EVENTARGUMENT'
+        ]
+        
+        for field_name in field_names:
+            field = soup.find('input', {'name': field_name})
+            if field and field.get('value'):
+                fields[field_name] = field.get('value')
+                self.logger.debug(f"Found {field_name}: {fields[field_name][:50]}...")
+        
+        return fields
+    
+    def fetch_page_with_postback(self, base_url: str, page_number: int, 
+                                  first_page_html: str = None) -> str:
+        """
+        Fetch a specific page using __doPostBack navigation.
+        
+        Args:
+            base_url: The base URL of the page
+            page_number: Page number to fetch (1-indexed)
+            first_page_html: HTML content of first page (to extract initial ViewState)
+        
+        Returns:
+            HTML content of the requested page
+        """
+        try:
+            # For page 1, just fetch normally
+            if page_number == 1:
+                response = self.parent.fetchURL(base_url)
+                return response.text if response else None
+            
+            # For subsequent pages, need to perform a POST with __doPostBack
+            # The target format is typically: 'ctl00$ContentPlaceHolder1$dtpgrGain$ctl02$ctl00'
+            # For page 2, it becomes: 'ctl00$ContentPlaceHolder1$dtpgrGain$ctl02$ctl01'
+            # And so on...
+            
+            # Extract the base target from first page
+            if first_page_html:
+                aspnet_fields = self.extract_aspnet_fields(first_page_html)
+            else:
+                # If first page HTML not provided, fetch it
+                first_response = self.parent.fetchURL(base_url)
+                if first_response:
+                    aspnet_fields = self.extract_aspnet_fields(first_response.text)
+                else:
+                    return None
+            
+            # Construct the postback target for the desired page
+            # The pattern: ctl00$ContentPlaceHolder1$dtpgrGain$ctl02$ctlXX
+            # Where XX is page_number - 1 (since ctl00 is first page)
+            page_index = page_number - 1
+            target = f"ctl00$ContentPlaceHolder1$dtpgrGain$ctl02$ctl{page_index:02d}"
+            
+            # Prepare POST data
+            post_data = {
+                '__VIEWSTATE': aspnet_fields.get('__VIEWSTATE', ''),
+                '__EVENTVALIDATION': aspnet_fields.get('__EVENTVALIDATION', ''),
+                '__VIEWSTATEGENERATOR': aspnet_fields.get('__VIEWSTATEGENERATOR', ''),
+                '__EVENTTARGET': target,
+                '__EVENTARGUMENT': '',
+            }
+            
+            # Add any other hidden fields
+            for key in ['__LASTFOCUS', '__SCROLLPOSITION']:
+                if key in aspnet_fields:
+                    post_data[key] = aspnet_fields[key]
+            
+            # Make the POST request
+            headers = {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Referer': base_url,
+                'X-Requested-With': 'XMLHttpRequest'  # May not be needed, but helps
+            }
+            
+            response = self.parent.postURL(
+                base_url, 
+                data=post_data, 
+                headers=headers,
+                timeout=30
+            )
+            
+            if response and response.status_code == 200:
+                return response.text
+            else:
+                self.logger.warning(f"Failed to fetch page {page_number}: {response.status_code if response else 'No response'}")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Error fetching page {page_number}: {e}")
+            return None
+    
+    def detect_total_pages(self, html_content: str) -> int:
+        """
+        Detect total number of pages from the pagination control.
+        """
+        if not html_content:
+            return 1
+        
+        soup = BeautifulSoup(html_content, 'html.parser')
+        
+        # Look for pagination container
+        pagination = soup.find('table', {'class': 'Pager'}) or \
+                     soup.find('div', {'class': 'pager'}) or \
+                     soup.find('td', {'class': 'pager'})
+        
+        if pagination:
+            # Find all page links or page numbers
+            page_links = pagination.find_all('a')
+            page_spans = pagination.find_all('span')
+            
+            # Extract numbers from links and spans
+            page_numbers = []
+            
+            for link in page_links:
+                text = link.get_text(strip=True)
+                if text.isdigit():
+                    page_numbers.append(int(text))
+            
+            for span in page_spans:
+                text = span.get_text(strip=True)
+                if text.isdigit():
+                    page_numbers.append(int(text))
+            
+            if page_numbers:
+                return max(page_numbers)
+        
+        # Check dropdown if present
+        dropdown = soup.find('select', {'name': re.compile(r'PageSize', re.I)})
+        if dropdown:
+            options = dropdown.find_all('option')
+            for option in options:
+                text = option.get_text(strip=True)
+                if text.isdigit():
+                    page_numbers.append(int(text))
+            if page_numbers:
+                return max(page_numbers)
+        
+        # Default to finding all page links from the __doPostBack pattern
+        postback_links = soup.find_all('a', href=re.compile(r"__doPostBack"))
+        max_page = 1
+        for link in postback_links:
+            href = link.get('href', '')
+            # Look for pattern like 'ctlXX' where XX is a number
+            match = re.search(r'ctl(\d{2})', href)
+            if match:
+                page_num = int(match.group(1)) + 1  # +1 because ctl00 is page 1
+                max_page = max(max_page, page_num)
+        
+        return max_page
+    
+    def extract_table_from_html(self, html_content: str, expected_columns: list = None) -> pd.DataFrame:
+        """
+        Extract the main data table from HTML content.
+        
+        Args:
+            html_content: HTML content to parse
+            expected_columns: List of expected column names to identify the correct table
+        
+        Returns:
+            DataFrame with extracted data
+        """
+        if not html_content:
+            return pd.DataFrame()
+        
+        try:
+            tables = pd.read_html(html_content)
+            
+            if not tables:
+                return pd.DataFrame()
+            
+            # Find the table with expected columns if provided
+            if expected_columns:
+                for table in tables:
+                    if any(col in str(table.columns) for col in expected_columns):
+                        return table
+            
+            # Fallback: return the second table (typically the data table)
+            return tables[1] if len(tables) > 1 else tables[0]
+            
+        except Exception as e:
+            self.logger.error(f"Error extracting table: {e}")
+            return pd.DataFrame()
+    
+    def fetch_all_pages_data(self, base_url: str, date_column: str, 
+                          expected_columns: list = None, max_pages: int = 20) -> pd.DataFrame:
+        """
+        Fetch data from all pages using __doPostBack navigation.
+        
+        Args:
+            base_url: Base URL of the page
+            date_column: Column name to check for future dates
+            expected_columns: List of expected column names to identify the correct table
+            max_pages: Maximum number of pages to fetch (default 20)
+        
+        Returns:
+            DataFrame with filtered data (rows where date is today or future)
+        """
+        import time
+        import pandas as pd
+        from bs4 import BeautifulSoup
+        
+        all_data = []
+        today = datetime.now().date()
+        
+        self.logger.info(f"Starting to fetch data from {base_url}")
+        
+        # Fetch first page to get initial state and detect total pages
+        first_response = self.parent.fetchURL(base_url)
+        if first_response is None or first_response.status_code != 200:
+            self.logger.error(f"Failed to fetch first page")
+            return pd.DataFrame()
+        
+        first_html = first_response.text
+        
+        # Detect total pages from pagination control
+        soup = BeautifulSoup(first_html, 'html.parser')
+        pagination_links = soup.find_all('a', href=re.compile(r"__doPostBack.*ctl01\$ctl\d+"))
+        
+        total_pages = 1
+        for link in pagination_links:
+            href = link.get('href', '')
+            # Extract page number from the target
+            match = re.search(r'ctl01\$ctl(\d+)', href)
+            if match:
+                page_num = int(match.group(1))
+                if page_num > total_pages:
+                    total_pages = page_num
+        
+        # Also check for the "..." which indicates more pages
+        if soup.find('a', href=re.compile(r"__doPostBack.*ctl01\$ctl\d+.*\.\.\.")):
+            # If there's a "...", we need to fetch the last page to know total
+            last_page_link = soup.find('a', href=re.compile(r"__doPostBack.*ctl02\$ctl00"))
+            if last_page_link:
+                total_pages = 20  # Conservative estimate
+        
+        self.logger.info(f"Detected {total_pages} total pages")
+        
+        # Extract table from first page
+        df_first = self.extract_table_from_html(first_html, expected_columns)
+        if not df_first.empty:
+            all_data.append(df_first)
+            self.logger.info(f"Page 1: Fetched {len(df_first)} rows")
+        
+        # Extract ViewState and other hidden fields from first page
+        soup = BeautifulSoup(first_html, 'html.parser')
+        viewstate = soup.find('input', {'name': '__VIEWSTATE'})
+        viewstate_value = viewstate.get('value', '') if viewstate else ''
+        
+        eventvalidation = soup.find('input', {'name': '__EVENTVALIDATION'})
+        eventvalidation_value = eventvalidation.get('value', '') if eventvalidation else ''
+        
+        viewstategenerator = soup.find('input', {'name': '__VIEWSTATEGENERATOR'})
+        viewstategenerator_value = viewstategenerator.get('value', '') if viewstategenerator else ''
+        
+        # Fetch remaining pages
+        for page_num in range(2, total_pages + 1):
+            try:
+                self.logger.debug(f"Fetching page {page_num}...")
+                
+                # Construct the postback target for this page
+                # Pattern: ctl00$ContentPlaceHolder1$dtpgrGain$ctl01$ctlXX
+                # where XX is page_num - 1 (formatted as 2 digits)
+                page_index = page_num - 1
+                target = f"ctl00$ContentPlaceHolder1$dtpgrGain$ctl01$ctl{page_index:02d}"
+                
+                # Prepare POST data
+                post_data = {
+                    '__EVENTTARGET': target,
+                    '__EVENTARGUMENT': '',
+                    '__VIEWSTATE': viewstate_value,
+                    '__EVENTVALIDATION': eventvalidation_value,
+                    '__VIEWSTATEGENERATOR': viewstategenerator_value,
+                    '__LASTFOCUS': '',
+                    '__SCROLLPOSITION': '',
+                }
+                
+                # Also include any other hidden fields found in the form
+                for hidden in soup.find_all('input', {'type': 'hidden'}):
+                    name = hidden.get('name')
+                    value = hidden.get('value', '')
+                    if name and name not in post_data:
+                        post_data[name] = value
+                
+                # Make the POST request
+                headers = {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Referer': base_url,
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+                
+                response = self.parent.postURL(base_url, data=post_data, headers=headers, timeout=30)
+                
+                if response and response.status_code == 200:
+                    page_html = response.text
+                    
+                    # Update ViewState for next request (important!)
+                    new_soup = BeautifulSoup(page_html, 'html.parser')
+                    new_viewstate = new_soup.find('input', {'name': '__VIEWSTATE'})
+                    if new_viewstate and new_viewstate.get('value'):
+                        viewstate_value = new_viewstate.get('value')
+                    
+                    new_eventvalidation = new_soup.find('input', {'name': '__EVENTVALIDATION'})
+                    if new_eventvalidation and new_eventvalidation.get('value'):
+                        eventvalidation_value = new_eventvalidation.get('value')
+                    
+                    # Extract table from this page
+                    df_page = self.extract_table_from_html(page_html, expected_columns)
+                    if not df_page.empty:
+                        all_data.append(df_page)
+                        self.logger.info(f"Page {page_num}: Fetched {len(df_page)} rows")
+                    else:
+                        self.logger.warning(f"Page {page_num}: No data found")
+                        break
+                else:
+                    self.logger.warning(f"Failed to fetch page {page_num}: {response.status_code if response else 'No response'}")
+                    break
+                
+                # Be respectful to the server
+                time.sleep(1)
+                
+            except Exception as e:
+                self.logger.error(f"Error fetching page {page_num}: {e}")
+                continue
+        
+        if not all_data:
+            self.logger.warning("No data fetched from any page")
+            return pd.DataFrame()
+        
+        # Combine all data
+        combined_df = pd.concat(all_data, ignore_index=True)
+        self.logger.info(f"Total rows fetched: {len(combined_df)}")
+        
+        # Remove duplicate rows (keeping first occurrence)
+        combined_df = combined_df.drop_duplicates(subset=['Company Name'], keep='first')
+        self.logger.info(f"After deduplication: {len(combined_df)} rows")
+        
+        # Filter for future dates
+        filtered_df = self.filter_future_dates(combined_df, date_column, today)
+        
+        return filtered_df
+    
+    def filter_future_dates(self, df: pd.DataFrame, date_column: str, today: datetime.date) -> pd.DataFrame:
+        """
+        Filter DataFrame for rows where the specified date column is today or in the future.
+        """
+        if df.empty or date_column not in df.columns:
+            return df
+        
+        def parse_date(date_value):
+            """Parse date from various formats."""
+            if pd.isna(date_value) or date_value == "":
+                return None
+            
+            date_str = str(date_value).strip()
+            
+            # Try common formats
+            formats = [
+                '%d-%b-%Y',  # 13-Apr-2026
+                '%d-%b-%y',  # 13-Apr-26
+                '%d/%m/%Y',  # 13/04/2026
+                '%Y-%m-%d',  # 2026-04-13
+                '%d-%m-%Y',  # 13-04-2026
+            ]
+            
+            for fmt in formats:
+                try:
+                    return datetime.strptime(date_str, fmt).date()
+                except ValueError:
+                    continue
+            
+            return None
+        
+        # Parse dates and filter
+        df['_parsed_date'] = df[date_column].apply(parse_date)
+        filtered_df = df[df['_parsed_date'] >= today].copy()
+        filtered_df.drop('_parsed_date', axis=1, inplace=True)
+        
+        self.logger.info(f"Filtered to {len(filtered_df)} rows with {date_column} >= {today}")
+        
+        return filtered_df
+
 class morningstarDataFetcher(fetcher):
     def fetchMorningstarTopDividendsYieldStocks(self):
         url = "https://lt.morningstar.com/api/rest.svc/g9vi2nsqjb/security/screener?page=1&pageSize=100&sortOrder=dividendYield%20desc&outputType=json&version=1&languageId=en&currencyId=BAS&universeIds=E0EXG%24XBOM%7CE0EXG%24XNSE&securityDataPoints=secId%2Cname%2CexchangeId%2CsectorId%2CindustryId%2CmarketCap%2CdividendYield%2CclosePrice%2CpriceCurrency%2CPEGRatio%2CpeRatio%2CquantitativeStarRating%2CequityStyleBox%2CgbrReturnM0%2CgbrReturnD1%2CgbrReturnW1%2CgbrReturnM1%2CgbrReturnM3%2CgbrReturnM6%2CgbrReturnM12%2CgbrReturnM36%2CgbrReturnM60%2CgbrReturnM120%2CrevenueGrowth3Y%2CdebtEquityRatio%2CnetMargin%2Croattm%2Croettm%2Cexchange&filters=&term="
@@ -334,139 +746,49 @@ class morningstarDataFetcher(fetcher):
 
     def getCorporateActions(self):
         """
-        Fetch corporate actions (dividends, bonuses, stock splits) from BOBCAPS website.
+        Fetch all corporate actions (dividends, bonuses, stock splits) from BOBCAPS website.
+        Handles ASP.NET __doPostBack pagination.
         
         Returns:
             Tuple of (dividends_df, bonus_df, stockSplit_df) as DataFrames
         """
-        import pandas as pd
-        from PKDevTools.classes.PKDateUtilities import PKDateUtilities
-        from PKDevTools.classes.log import default_logger
-        
         # Refresh tokens and cookies before making requests
         self.refreshBobCapsTokens()
         
-        # Initialize empty DataFrames with proper columns
-        dividends_df = pd.DataFrame(columns=["Stock", "Div.Type", "Div(%)", "Announced", "Div.Date", "Record"])
-        bonus_df = pd.DataFrame(columns=["Stock", "Ratio", "Announced", "Record"])
-        stockSplit_df = pd.DataFrame(columns=["Stock", "Split", "OldFV", "NewFV", "Announced"])
+        # Create fetcher instance
+        fetcher = CorporateActionsFetcher(self)
         
-        # Helper function to clean and process dataframes
-        def clean_dataframe(df, df_type):
-            if df is None or df.empty:
-                return df
-            
-            # Standardize column names
-            column_mappings = {
-                "Company Name": "Stock",
-                "Dividend Type": "Div.Type",
-                "Dividend (%)": "Div(%)",
-                "Announcement Date": "Announced",
-                "Dividend Date": "Div.Date",
-                "Record Date": "Record",
-                "Split Date": "Split",
-                "FV Before": "OldFV",
-                "FV After": "NewFV",
-                "Bonus Ratio": "Ratio",
-            }
-            df.rename(columns=column_mappings, inplace=True)
-            
-            # Process Stock names - remove any extra spaces
-            if "Stock" in df.columns:
-                df["Stock"] = df["Stock"].astype(str).str.strip()
-                # Try to map to ticker symbols if function exists
-                if hasattr(self, 'searchStockTickerByFullName'):
-                    try:
-                        df["Stock"] = df["Stock"].apply(
-                            lambda x: self.searchStockTickerByFullName(x) if pd.notna(x) else x
-                        )
-                    except Exception as e:
-                        default_logger().debug(f"Error mapping stock names: {e}")
-            
-            # Process date columns
-            date_columns = ["Record", "Div.Date", "Split", "Announced"]
-            for col in date_columns:
-                if col in df.columns:
-                    try:
-                        df[col] = df[col].apply(
-                            lambda x: PKDateUtilities.dateFromdbYString(str(x)).strftime("%Y-%m-%d")
-                            if pd.notna(x) and str(x).strip() else None
-                        )
-                    except Exception as e:
-                        default_logger().debug(f"Error parsing dates in column {col}: {e}")
-            
-            # Clean percentage columns
-            if df_type == "dividend" and "Div(%)" in df.columns:
-                df["Div(%)"] = df["Div(%)"].astype(str).str.replace("%", "").str.strip()
-            
-            # Remove any rows where Stock is empty or None
-            if "Stock" in df.columns:
-                df = df[df["Stock"].notna() & (df["Stock"].astype(str).str.strip() != "")]
-            
-            return df
+        # Define expected columns for each page type
+        dividend_columns = ["Company Name", "Dividend Type", "Dividend (%)", "Announcement Date", "Dividend Date", "Record Date"]
+        bonus_columns = ["Company Name", "Bonus Ratio", "Announcement Date", "Record Date"]
+        split_columns = ["Company Name", "Split Date", "FV Before", "FV After", "Announcement Date"]
         
-        # Fetch Dividend Data
-        try:
-            dividend_html = self.fetchURL("https://www.barodaetrade.com/Markettracker/Dividend_Declared")
-            if dividend_html is not None and dividend_html.status_code == 200:
-                # Parse the HTML to find the correct table
-                soup = BeautifulSoup(dividend_html.text, 'html.parser')
-                
-                # Look for tables with dividend data
-                tables = pd.read_html(dividend_html.text)
-                
-                for i, table in enumerate(tables):
-                    # Check if this table contains dividend-related columns
-                    if any(col in str(table.columns) for col in ["Company Name", "Dividend Type", "Dividend Date"]):
-                        dividends_df = table
-                        default_logger().info(f"Found dividend table at index {i} with {len(dividends_df)} rows")
-                        break
-                
-                # If no table found with specific columns, try the second table as fallback
-                if dividends_df.empty and len(tables) > 1:
-                    dividends_df = tables[1]
-                    default_logger().info(f"Using fallback dividend table with {len(dividends_df)} rows")
-                
-                dividends_df = clean_dataframe(dividends_df, "dividend")
-            else:
-                default_logger().warning("Failed to fetch dividend data")
-        except Exception as e:
-            default_logger().error(f"Error fetching dividend data: {e}")
+        # Fetch all corporate actions
+        dividends_df = fetcher.fetch_all_pages_data(
+            "https://www.barodaetrade.com/Markettracker/Dividend_Declared",
+            date_column="Dividend Date",
+            expected_columns=dividend_columns
+        )
         
-        # Fetch Bonus Data
-        try:
-            bonus_html = self.fetchURL("https://www.barodaetrade.com/Markettracker/Bonous_Issue")
-            if bonus_html is not None and bonus_html.status_code == 200:
-                bonus_dfs = pd.read_html(bonus_html.text)
-                if len(bonus_dfs) > 1:
-                    bonus_df = bonus_dfs[1]
-                elif len(bonus_dfs) > 0:
-                    bonus_df = bonus_dfs[0]
-                bonus_df = clean_dataframe(bonus_df, "bonus")
-            else:
-                default_logger().warning("Failed to fetch bonus data")
-        except Exception as e:
-            default_logger().error(f"Error fetching bonus data: {e}")
+        bonus_df = fetcher.fetch_all_pages_data(
+            "https://www.barodaetrade.com/Markettracker/Bonous_Issue",
+            date_column="Record Date",
+            expected_columns=bonus_columns
+        )
         
-        # Fetch Stock Split Data
-        try:
-            stockSplit_html = self.fetchURL("https://www.barodaetrade.com/Markettracker/Stock_Split")
-            if stockSplit_html is not None and stockSplit_html.status_code == 200:
-                stockSplit_dfs = pd.read_html(stockSplit_html.text)
-                if len(stockSplit_dfs) > 1:
-                    stockSplit_df = stockSplit_dfs[1]
-                elif len(stockSplit_dfs) > 0:
-                    stockSplit_df = stockSplit_dfs[0]
-                stockSplit_df = clean_dataframe(stockSplit_df, "split")
-            else:
-                default_logger().warning("Failed to fetch stock split data")
-        except Exception as e:
-            default_logger().error(f"Error fetching stock split data: {e}")
+        stockSplit_df = fetcher.fetch_all_pages_data(
+            "https://www.barodaetrade.com/Markettracker/Stock_Split",
+            date_column="Split Date",
+            expected_columns=split_columns
+        )
         
-        # Log summary
-        default_logger().info(f"Corporate Actions Fetched: Dividends={len(dividends_df)}, Bonuses={len(bonus_df)}, Stock Splits={len(stockSplit_df)}")
+        # Clean and standardize column names
+        dividends_df = clean_corporate_actions_df(dividends_df, "dividend", self)
+        bonus_df = clean_corporate_actions_df(bonus_df, "bonus", self)
+        stockSplit_df = clean_corporate_actions_df(stockSplit_df, "split", self)
         
         return dividends_df, bonus_df, stockSplit_df
+
 
     def searchStockTickerByFullName(self, company_name):
         """
@@ -510,3 +832,52 @@ class morningstarDataFetcher(fetcher):
         
         # Fallback: return original name
         return company_name
+
+
+def clean_corporate_actions_df(df: pd.DataFrame, df_type: str, parent) -> pd.DataFrame:
+    """
+    Clean and standardize corporate actions DataFrame.
+    
+    Args:
+        df: DataFrame to clean
+        df_type: Type of DataFrame ('dividend', 'bonus', 'split')
+        parent: Parent object (for searchStockTickerByFullName method)
+    
+    Returns:
+        Cleaned DataFrame
+    """
+    if df.empty:
+        return df
+    
+    # Standardize column names
+    column_mappings = {
+        "Company Name": "Stock",
+        "Dividend Type": "Div.Type",
+        "Dividend (%)": "Div(%)",
+        "Announcement Date": "Announced",
+        "Dividend Date": "Div.Date",
+        "Record Date": "Record",
+        "Split Date": "Split",
+        "FV Before": "OldFV",
+        "FV After": "NewFV",
+        "Bonus Ratio": "Ratio",
+    }
+    df.rename(columns=column_mappings, inplace=True)
+    
+    # Map company names to tickers if function exists
+    if hasattr(parent, 'searchStockTickerByFullName'):
+        try:
+            df["Stock"] = df["Stock"].apply(
+                lambda x: parent.searchStockTickerByFullName(x) if pd.notna(x) else x
+            )
+        except Exception as e:
+            parent.logger.debug(f"Error mapping stock names: {e}")
+    
+    # Clean percentage column for dividends
+    if df_type == "dividend" and "Div(%)" in df.columns:
+        df["Div(%)"] = df["Div(%)"].astype(str).str.replace("%", "").str.strip()
+    
+    # Remove rows with empty Stock names
+    df = df[df["Stock"].notna() & (df["Stock"].astype(str).str.strip() != "")]
+    
+    return df
