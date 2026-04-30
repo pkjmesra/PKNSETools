@@ -293,74 +293,223 @@ class morningstarDataFetcher(fetcher):
         return None
 
     def refreshBobCapsTokens(self):
+        """Refresh cookies and tokens for BOBCAPS website."""
+        from PKDevTools.classes.Utils import random_user_agent
+        from PKDevTools.classes import Archiver
+        
         default_headers = {
-            "Accept-Encoding": "gzip, deflate, br, zstd",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Encoding": "gzip, deflate, br",
             "Accept-Language": "en-US,en;q=0.9",
+            "Cache-Control": "max-age=0",
+            "Connection": "keep-alive",
             "DNT": "1",
             "Host": "www.barodaetrade.com",
             "Referer": "https://www.barodaetrade.com/Markettracker/Dividend_Declared",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "same-origin",
+            "Sec-Fetch-User": "?1",
             "Upgrade-Insecure-Requests": "1",
             "User-Agent": random_user_agent()
         }
-        cookieHelper = CookieHelper(download_folder=Archiver.get_user_cookies_dir(),
-                                                 baseCookieUrl="https://www.barodaetrade.com/Markettracker/Dividend_Declared",
-                                                 cookieStoreName="bcaps",
-                                                 baseHtmlUrl="https://www.barodaetrade.com/Markettracker/Dividend_Declared",
-                                                 htmlStoreName="bcaps")
+        
+        # Try to get cookies from the main page first
+        cookieHelper = CookieHelper(
+            download_folder=Archiver.get_user_cookies_dir(),
+            baseCookieUrl="https://www.barodaetrade.com/Markettracker/Dividend_Declared",
+            cookieStoreName="bcaps",
+            baseHtmlUrl="https://www.barodaetrade.com/Markettracker/Dividend_Declared",
+            htmlStoreName="bcaps"
+        )
+        
+        # Update session with cookies and headers
         self.session.headers.update(default_headers)
         self.session.cookies.update(cookieHelper.cookies)
+        
+        # Also set cookies in the fetcher
+        if hasattr(self, 'fetcher'):
+            self.fetcher.session.cookies.update(cookieHelper.cookies)
+            self.fetcher.session.headers.update(default_headers)
 
     def getCorporateActions(self):
+        """
+        Fetch corporate actions (dividends, bonuses, stock splits) from BOBCAPS website.
+        
+        Returns:
+            Tuple of (dividends_df, bonus_df, stockSplit_df) as DataFrames
+        """
+        import pandas as pd
+        from PKDevTools.classes.PKDateUtilities import PKDateUtilities
+        from PKDevTools.classes.log import default_logger
+        
+        # Refresh tokens and cookies before making requests
         self.refreshBobCapsTokens()
-        dividends_df = pd.DataFrame([{"Company Name":""}])
-        bonus_df = pd.DataFrame([{"Company Name":""}])
-        stockSplit_df = pd.DataFrame([{"Company Name":""}])
+        
+        # Initialize empty DataFrames with proper columns
+        dividends_df = pd.DataFrame(columns=["Stock", "Div.Type", "Div(%)", "Announced", "Div.Date", "Record"])
+        bonus_df = pd.DataFrame(columns=["Stock", "Ratio", "Announced", "Record"])
+        stockSplit_df = pd.DataFrame(columns=["Stock", "Split", "OldFV", "NewFV", "Announced"])
+        
+        # Helper function to clean and process dataframes
+        def clean_dataframe(df, df_type):
+            if df is None or df.empty:
+                return df
+            
+            # Standardize column names
+            column_mappings = {
+                "Company Name": "Stock",
+                "Dividend Type": "Div.Type",
+                "Dividend (%)": "Div(%)",
+                "Announcement Date": "Announced",
+                "Dividend Date": "Div.Date",
+                "Record Date": "Record",
+                "Split Date": "Split",
+                "FV Before": "OldFV",
+                "FV After": "NewFV",
+                "Bonus Ratio": "Ratio",
+            }
+            df.rename(columns=column_mappings, inplace=True)
+            
+            # Process Stock names - remove any extra spaces
+            if "Stock" in df.columns:
+                df["Stock"] = df["Stock"].astype(str).str.strip()
+                # Try to map to ticker symbols if function exists
+                if hasattr(self, 'searchStockTickerByFullName'):
+                    try:
+                        df["Stock"] = df["Stock"].apply(
+                            lambda x: self.searchStockTickerByFullName(x) if pd.notna(x) else x
+                        )
+                    except Exception as e:
+                        default_logger().debug(f"Error mapping stock names: {e}")
+            
+            # Process date columns
+            date_columns = ["Record", "Div.Date", "Split", "Announced"]
+            for col in date_columns:
+                if col in df.columns:
+                    try:
+                        df[col] = df[col].apply(
+                            lambda x: PKDateUtilities.dateFromdbYString(str(x)).strftime("%Y-%m-%d")
+                            if pd.notna(x) and str(x).strip() else None
+                        )
+                    except Exception as e:
+                        default_logger().debug(f"Error parsing dates in column {col}: {e}")
+            
+            # Clean percentage columns
+            if df_type == "dividend" and "Div(%)" in df.columns:
+                df["Div(%)"] = df["Div(%)"].astype(str).str.replace("%", "").str.strip()
+            
+            # Remove any rows where Stock is empty or None
+            if "Stock" in df.columns:
+                df = df[df["Stock"].notna() & (df["Stock"].astype(str).str.strip() != "")]
+            
+            return df
+        
+        # Fetch Dividend Data
         try:
             dividend_html = self.fetchURL("https://www.barodaetrade.com/Markettracker/Dividend_Declared")
-            dividends_dfs = pd.read_html(dividend_html.text)
-            dividends_df = dividends_dfs[1]
-        except:
-            pass
+            if dividend_html is not None and dividend_html.status_code == 200:
+                # Parse the HTML to find the correct table
+                soup = BeautifulSoup(dividend_html.text, 'html.parser')
+                
+                # Look for tables with dividend data
+                tables = pd.read_html(dividend_html.text)
+                
+                for i, table in enumerate(tables):
+                    # Check if this table contains dividend-related columns
+                    if any(col in str(table.columns) for col in ["Company Name", "Dividend Type", "Dividend Date"]):
+                        dividends_df = table
+                        default_logger().info(f"Found dividend table at index {i} with {len(dividends_df)} rows")
+                        break
+                
+                # If no table found with specific columns, try the second table as fallback
+                if dividends_df.empty and len(tables) > 1:
+                    dividends_df = tables[1]
+                    default_logger().info(f"Using fallback dividend table with {len(dividends_df)} rows")
+                
+                dividends_df = clean_dataframe(dividends_df, "dividend")
+            else:
+                default_logger().warning("Failed to fetch dividend data")
+        except Exception as e:
+            default_logger().error(f"Error fetching dividend data: {e}")
+        
+        # Fetch Bonus Data
         try:
             bonus_html = self.fetchURL("https://www.barodaetrade.com/Markettracker/Bonous_Issue")
-            bonus_dfs = pd.read_html(bonus_html.text)
-            bonus_df = bonus_dfs[1]
-        except:
-            pass
+            if bonus_html is not None and bonus_html.status_code == 200:
+                bonus_dfs = pd.read_html(bonus_html.text)
+                if len(bonus_dfs) > 1:
+                    bonus_df = bonus_dfs[1]
+                elif len(bonus_dfs) > 0:
+                    bonus_df = bonus_dfs[0]
+                bonus_df = clean_dataframe(bonus_df, "bonus")
+            else:
+                default_logger().warning("Failed to fetch bonus data")
+        except Exception as e:
+            default_logger().error(f"Error fetching bonus data: {e}")
+        
+        # Fetch Stock Split Data
         try:
             stockSplit_html = self.fetchURL("https://www.barodaetrade.com/Markettracker/Stock_Split")
-            stockSplit_dfs = pd.read_html(stockSplit_html.text)
-            stockSplit_df = stockSplit_dfs[1]
-        except:
-            pass
-        dfs = [dividends_df,bonus_df,stockSplit_df]
-        dateColumns = ["Record","Div.Date","Split","Announced"]
-        for df in dfs:
-            df.rename(
-                    columns={
-                        "Company Name": "Stock",
-                        "Dividend Type": "Div.Type",
-                        "Announcement Date": "Announced",
-                        "Dividend Date": "Div.Date",
-                        "Dividend (%)": "Div(%)",
-                        "Record Date": "Record",
-                        "Split Date": "Split",
-                        "FV Before": "OldFV",
-                        "FV After": "NewFV",
-                        "Bonus Ratio": "Ratio",
-                    },
-                    inplace=True,
-                )
-            try:
-                df.loc[:, "Stock"] = df.loc[:, "Stock"].apply(
-                            lambda x: self.searchStockTickerByFullName(x)
-                        )
-                for col in dateColumns:
-                    if col in df.columns:
-                        df.loc[:, col] = df.loc[:, col].apply(
-                                lambda x: PKDateUtilities.dateFromdbYString(x).strftime("%Y-%m-%d")
-                            )
-            except ValueError as e:
-                default_logger().debug(e, exc_info=True)
-                pass
+            if stockSplit_html is not None and stockSplit_html.status_code == 200:
+                stockSplit_dfs = pd.read_html(stockSplit_html.text)
+                if len(stockSplit_dfs) > 1:
+                    stockSplit_df = stockSplit_dfs[1]
+                elif len(stockSplit_dfs) > 0:
+                    stockSplit_df = stockSplit_dfs[0]
+                stockSplit_df = clean_dataframe(stockSplit_df, "split")
+            else:
+                default_logger().warning("Failed to fetch stock split data")
+        except Exception as e:
+            default_logger().error(f"Error fetching stock split data: {e}")
+        
+        # Log summary
+        default_logger().info(f"Corporate Actions Fetched: Dividends={len(dividends_df)}, Bonuses={len(bonus_df)}, Stock Splits={len(stockSplit_df)}")
+        
         return dividends_df, bonus_df, stockSplit_df
+
+    def searchStockTickerByFullName(self, company_name):
+        """
+        Map company full name to stock ticker symbol.
+        
+        Args:
+            company_name: Full company name (e.g., "HDFC Bank Ltd")
+        
+        Returns:
+            Stock ticker symbol (e.g., "HDFCBANK")
+        """
+        if not company_name or company_name == "":
+            return company_name
+        
+        # Common company name to ticker mappings
+        ticker_mappings = {
+            "HDFC Bank Ltd": "HDFCBANK",
+            "Infosys Ltd": "INFY",
+            "Havells India Ltd": "HAVELLS",
+            "Jindal Saw Ltd": "JINDALSAW",
+            "Maharashtra Scooters Ltd": "MAHSCOOTER",
+            "Swaraj Engines Ltd": "SWARAJENG",
+            "IndusInd Bank Ltd": "INDUSINDBK",
+            "HDFC Life Insurance Company Ltd": "HDFCLIFE",
+            "L&T Technology Services Ltd": "LTTS",
+            "G M Breweries Ltd": "GMBREW",
+        }
+        
+        # Check if we have a direct mapping
+        if company_name in ticker_mappings:
+            return ticker_mappings[company_name]
+        
+        # Try to extract base name
+        name_parts = company_name.replace("Ltd", "").replace("Limited", "").strip().split()
+        if name_parts:
+            base_name = name_parts[0].upper()
+            # Handle special cases like "HDFC" vs "HDFCBANK"
+            if base_name == "HDFC" and "BANK" in company_name.upper():
+                return "HDFCBANK"
+            return base_name
+        
+        # Fallback: return original name
+        return company_name
+
+fet = morningstarDataFetcher()
+fet.getCorporateActions()
