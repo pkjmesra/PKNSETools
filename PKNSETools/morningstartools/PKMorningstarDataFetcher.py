@@ -510,6 +510,3 @@ class morningstarDataFetcher(fetcher):
         
         # Fallback: return original name
         return company_name
-
-fet = morningstarDataFetcher()
-fet.getCorporateActions()
