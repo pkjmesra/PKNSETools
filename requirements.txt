@@ -3,7 +3,7 @@ bs4
 mthrottle
 numpy
 pandas
-PKDevTools>=0.13.20260505.341
+PKDevTools>=0.13.20260505.342
 pytz
 requests
 urllib3
